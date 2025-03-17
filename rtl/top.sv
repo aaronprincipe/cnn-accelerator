@@ -40,7 +40,7 @@ module top #(
 
     // Weight router parameters
     input logic [ADDR_WIDTH-1:0] i_w_start_addr,
-    input logic [ADDR_WIDTH-1:0] i_w_addr_offset,
+    input logic [ADDR_WIDTH-1:0] i_w_addr_end,
 
     // Output
     output logic [DATA_WIDTH*2-1:0] o_ofmap,
@@ -68,12 +68,15 @@ module top #(
     logic ir_ready, wr_ready;
     logic ir_context_done, wr_context_done;
     logic ir_done, wr_done;
-    logic ir_fifo_ptr_reset, wr_fifo_ptr_reset;
+    logic ir_tile_done, wr_tile_done;
+    logic ir_reg_clear, wr_reg_clear;
 
     logic output_done;
+    logic [ADDR_WIDTH-1:0] o_c;
 
     top_controller #(
         .ROWS(ROWS),
+        .COLUMNS(COLUMNS),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) top_controller_inst (
         .i_clk(i_clk),
@@ -82,20 +85,19 @@ module top #(
         .i_route_en(i_route_en),
         .o_ir_en(ir_en),
         .o_wr_en(wr_en),
-        .i_ir_ready(ir_ready),
-        .i_wr_ready(wr_ready),
         .o_ir_pop_en(ir_pop_en),
         .o_wr_pop_en(wr_pop_en),
+        .i_ir_ready(ir_ready),
+        .i_wr_ready(wr_ready),
+        .i_ir_context_done(ir_context_done),
+        .i_wr_context_done(wr_context_done),
+        .i_ir_tile_done(ir_tile_done),
+        .o_ir_reg_clear(ir_reg_clear),
+        .o_wr_reg_clear(wr_reg_clear),
+        .o_o_c(o_c),
         .i_ir_done(ir_done),
         .i_wr_done(wr_done),
-        .i_or_done(or_done),
-        .i_route_size(i_route_size),
-        .o_psum_out_en(psum_out_en),
-        .o_or_en(or_en),
-        .i_output_done(output_done),
-        .o_done(o_done),
-        .o_ir_fifo_ptr_reset(ir_fifo_ptr_reset),
-        .o_wr_fifo_ptr_reset(wr_fifo_ptr_reset)
+        .o_done(o_done)
     );
 
     // Instantiate input router
@@ -115,22 +117,22 @@ module top #(
         .SPAD_DATA_WIDTH(SPAD_DATA_WIDTH),
         .SPAD_N(SPAD_N),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .ROWS(ROWS),
+        .COUNT(ROWS),
         .MISO_DEPTH(MISO_DEPTH)
     ) ir_inst (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_en(ir_en),
-        .i_reg_clear(i_reg_clear),
+        .i_reg_clear(ir_reg_clear),
         .i_fifo_pop_en(ir_pop_en),
-        .i_fifo_ptr_reset(ir_fifo_ptr_reset),
+        .i_fifo_ptr_reset(),
         .i_p_mode(i_p_mode),
         .i_conv_mode(i_conv_mode),
         .i_i_size(i_i_size),
         .i_o_size(i_o_size),
-        .i_stride(i_stride),
+        // .i_stride(i_stride),
         .i_i_c_size(i_i_c_size),
-        .i_i_c(),
+        // .i_i_c(),
         .i_spad_write_en(spad_i_write_en),
         .i_spad_data_in(i_data_in),
         .i_spad_write_addr(i_write_addr),
@@ -141,13 +143,14 @@ module top #(
         .o_data_valid(ir_data_valid),
         .o_ready(ir_ready),
         .o_context_done(ir_context_done),
-        .o_done(ir_done)
+        .o_done(ir_done),
+        .o_tile_done(ir_tile_done)
     );
 
     // Instantiate weight router
-    logic wr_data_valid;
-    logic [ROWS-1:0][DATA_WIDTH-1:0] wr_weight;
-    logic [0:ROWS-1][DATA_WIDTH-1:0] s_weight;
+    logic [COLUMNS-1:0] wr_data_valid;
+    logic [COLUMNS-1:0][DATA_WIDTH-1:0] wr_weight;
+    logic [0:COLUMNS-1][DATA_WIDTH-1:0] s_weight;
 
     genvar jj;
     generate
@@ -161,17 +164,17 @@ module top #(
         .SPAD_DATA_WIDTH(SPAD_DATA_WIDTH),
         .SPAD_N(SPAD_N),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .COLUMNS(COLUMNS),
+        .COUNT(COLUMNS),
         .MISO_DEPTH(MISO_DEPTH)
     ) wr_inst (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_en(ir_en),
-        .i_reg_clear(i_reg_clear),
-        .i_fifo_pop_en(ir_pop_en),
-        .i_fifo_ptr_reset(wr_fifo_ptr_reset),
+        .i_reg_clear(wr_reg_clear),
+        .i_fifo_pop_en(wr_pop_en),
         .i_p_mode(i_p_mode),
         .i_conv_mode(i_conv_mode),
+        .i_o_c(o_c),
         .i_i_c_size(i_i_c_size),
         .i_o_c_size(i_o_c_size),
         .i_spad_write_en(spad_w_write_en),

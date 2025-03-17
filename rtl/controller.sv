@@ -10,6 +10,7 @@
 
 module top_controller # (
     parameter int ROWS = 2,
+    parameter int COLUMNS = 2,
     parameter int ADDR_WIDTH = 8
 ) (
     input logic i_clk,
@@ -29,28 +30,35 @@ module top_controller # (
     output logic o_ir_pop_en,
     output logic o_wr_pop_en,
 
-    // Ready signals
+    // Ready to Pop signals
     input logic i_ir_ready,
     input logic i_wr_ready,
 
-    // Done signals
+    // Start computing
     input logic i_ir_context_done,
     input logic i_wr_context_done,
+
+    // Finished input tile, reset weight router
+    input logic i_ir_tile_done,
+    output logic o_ir_reg_clear,
+    output logic o_wr_reg_clear,
+
+    // Dimensions
+    output logic [ADDR_WIDTH-1:0] o_o_c,
+
+    // Finished computing
     input logic i_ir_done,
     input logic i_wr_done,
-    output logic o_done,
-
-    // FIFO pointer reset signals
-    output o_ir_fifo_ptr_reset,
-    output o_wr_fifo_ptr_reset,
+    output logic o_done
 );
     logic [2:0] state;
     parameter int IDLE = 0;
-    parameter int SPAD_WRITE = 1; // More for the AXI. Future work
+    parameter int CLEAR = 1;
     parameter int ACTIVATION_ROUTING = 2;
-    parameter int COMPUTE = 3;
-    parameter int OUTPUT_ROUTING = 4;
-    parameter int DONE = 5;
+    parameter int FIFO_POP = 3;
+    parameter int COMPUTE = 4;
+    parameter int OUTPUT_ROUTING = 5;
+    parameter int DONE = 6;
 
     // Create an FSM to control the entire process
     /*
@@ -62,36 +70,51 @@ module top_controller # (
         DONE
     */
 
-
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if(~i_nrst) begin
-            o_ir_en <= 0;
             o_wr_en <= 0;
             o_ir_pop_en <= 0;
             o_wr_pop_en <= 0;
+            o_ir_reg_clear <= 0;
+            o_wr_reg_clear <= 0;
+            o_o_c <= 0;
             o_done <= 0;
-            o_ir_fifo_ptr_reset <= 0;
-            o_wr_fifo_ptr_reset <= 0;
             state <= IDLE;
         end else if (i_reg_clear) begin
-            o_ir_en <= 0;
             o_wr_en <= 0;
             o_ir_pop_en <= 0;
             o_wr_pop_en <= 0;
+            o_ir_reg_clear <= 0;
+            o_wr_reg_clear <= 0;
+            o_o_c <= 0;
             o_done <= 0;
-            o_ir_fifo_ptr_reset <= 0;
-            o_wr_fifo_ptr_reset <= 0;
             state <= IDLE;
         end else begin
             case (state)
                 IDLE: begin
-                    if (i_route_en) begin
-                        o_ir_en <= 1;
-                        o_wr_en <= 1;
-                        state <= ACTIVATION_ROUTING;
-                    end else begin
-                        state <= IDLE;
+                    if (i_ir_done & i_wr_done) begin
+                        o_done <= 1;
+                    end else if (i_route_en) begin
+                        if (i_ir_done) begin
+                            o_ir_reg_clear <= 1;
+                            o_o_c <= o_o_c + COLUMNS;
+                        end else begin
+                            o_o_c <= o_o_c;
+                        end
+
+                        if (i_ir_tile_done) begin
+                            o_wr_reg_clear <= 1;
+                        end
+                        state <= CLEAR;
                     end
+                end
+
+                CLEAR: begin
+                    o_wr_reg_clear <= 0;
+                    o_ir_reg_clear <= 0;
+                    o_ir_en <= 1;
+                    o_wr_en <= 1;
+                    state <= ACTIVATION_ROUTING;
                 end
 
                 ACTIVATION_ROUTING: begin
@@ -101,144 +124,26 @@ module top_controller # (
                     if (i_ir_ready & i_wr_ready) begin
                         o_ir_pop_en <= 1;
                         o_wr_pop_en <= 1;
+                        state <= FIFO_POP;
+                    end
+                end
+
+                FIFO_POP: begin
+                    // Done popping from both routers
+                    if (i_ir_context_done & i_wr_context_done) begin
                         state <= COMPUTE;
-                    end else begin
-                        state <= ACTIVATION_ROUTING;
                     end
                 end
                 
+                // Given row and column, estimate how many cycles it will take to compute
+                // For now, we will assume it takes 1 cycle to compute
                 COMPUTE: begin
-                    if (i_ir_done & i_wr_done) begin
-                        state <= OUTPUT_ROUTING;
-                    end else if (i_ir_context_done & i_wr_context_done) begin
-                        // Route Weights and reset pointers of Input
-                        o_wr_en <= 1;
-                        o_ir_fifo_ptr_reset <= 1;
-                        state <= ACTIVATION_ROUTING;
-                    end else if (i_ir_context_done & i_wr_done) begin
-                        // Route Inputs
-                        state <= COMPUTE;
-                    end
-                end
-            endcase
-        end
-    end
-
-
-
-    // Route signals
-    always_ff @(posedge i_clk or negedge i_nrst) begin
-        if (~i_nrst) begin
-            o_ir_en <= 0;
-            o_wr_en <= 0;
-        end else begin
-            if (i_reg_clear) begin
-                o_ir_en <= 0;
-                o_wr_en <= 0;
-            end else if(i_route_en) begin
-                o_ir_en <= 1;
-                o_wr_en <= 1;
-            end
-        end
-    end
-
-    // Pop at the same time when both routers are ready
-    always_ff @(posedge i_clk or negedge i_nrst) begin
-        if (~i_nrst) begin
-            o_ir_pop_en <= 0;
-            o_wr_pop_en <= 0;
-        end else begin
-            if (i_reg_clear) begin
-                o_ir_pop_en <= 0;
-                o_wr_pop_en <= 0;
-            end else if (i_ir_ready & i_wr_ready) begin
-                o_ir_pop_en <= 1;
-                o_wr_pop_en <= 1;
-            end else begin
-                o_ir_pop_en <= 0;
-                o_wr_pop_en <= 0;
-            end
-        end
-    end
-
-
-    // Output router 
-
-    enum logic [1:0] {
-        IDLE,
-        COMPUTATION,
-        OUT,
-        DONE
-    } state;
-
-    logic or_start;
-
-    assign or_start = i_ir_done & i_wr_done & (~i_or_done);
-
-    logic [ADDR_WIDTH-1:0] comp_cntr;
-
-    always_ff @(posedge i_clk or negedge i_nrst) begin
-        if (~i_nrst) begin
-            o_psum_out_en <= 0;
-            o_or_en <= 0;
-            comp_cntr <= 0;
-
-            state <= IDLE;
-        end else begin
-            case (state)
-                IDLE: begin
-                    if (or_start) begin
-                        o_psum_out_en <= 0;
-                        o_or_en <= 0;
-                        comp_cntr <= 0;
-                        state <= COMPUTATION;
-                    end else begin
-                        state <= IDLE;
-                    end
-                end
-
-                COMPUTATION: begin
-                    if (comp_cntr < ROWS-1) begin
-                        comp_cntr <= comp_cntr + 1;
-                        state <= COMPUTATION;
-                    end else begin
-                        o_psum_out_en <= 1;
-                        comp_cntr <= 0;
-                        state <= OUT;
-                    end
-                end
-
-                OUT: begin
-                    o_psum_out_en <= 0;
-                    if (i_or_done) begin
-                        o_or_en <= 0;
-                        state <= DONE;
-                    end else begin
-                        o_or_en <= 1;
-                        state <= OUT;
-                    end
-                end
-
-                DONE: begin
+                    o_ir_pop_en <= 0;
+                    o_wr_pop_en <= 0;
                     state <= IDLE;
                 end
-                default: state <= IDLE;
             endcase
         end
     end
 
-    // Finished computing entire output
-    always_ff @(posedge i_clk or negedge i_nrst) begin
-        if (~i_nrst) begin
-            o_done <= 0;
-        end else begin
-            if (i_reg_clear) begin
-                o_done <= 0;
-            end else if (i_output_done && i_wr_done && i_or_done) begin
-                o_done <= 1;
-            end else begin
-                o_done <= 0;
-            end
-        end
-    end
 endmodule

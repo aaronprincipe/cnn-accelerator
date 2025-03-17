@@ -9,11 +9,11 @@ module data_lane_array #(
     input logic i_clk,
     input logic i_nrst,
     input logic i_reg_clear,
+    input logic i_fifo_clear,
     input logic i_fifo_ptr_reset,
 
-    input logic [COUNT-1:0] i_id,
-
     // Address Reference
+    input logic [COUNT-1:0] i_id,
     input logic [ADDR_WIDTH-1:0] i_start_addr,
     input logic [ADDR_WIDTH-1:0] i_end_addr,
     input logic i_addr_write_en,
@@ -31,12 +31,13 @@ module data_lane_array #(
 
     // Status signals
     output logic [COUNT-1:0] o_data_valid,
-    output logic [COUNT-1:0] o_fifo_full,
+    output logic o_fifo_full,
     output logic o_fifo_empty,
-    output logic o_route_done
+    output logic o_route_done,
+    output logic o_idle
 );
     logic [COUNT-1:0] counter, rr_pop_en;
-    logic [COUNT-1:0] rr_data_empty, rr_data_valid, rr_miso_full, rr_route_done;
+    logic [COUNT-1:0] rr_data_empty, rr_data_valid, rr_miso_full, rr_route_done, rr_idle;
 
     // Stalled popping logic
     always_ff @ (posedge i_clk or negedge i_nrst) begin
@@ -77,6 +78,7 @@ module data_lane_array #(
                 .i_clk(i_clk),
                 .i_nrst(i_nrst),
                 .i_reg_clear(i_reg_clear),
+                .i_fifo_clear(i_fifo_clear),
                 .i_ac_en(i_ac_en),
                 .i_miso_pop_en(rr_pop_en[ii]),
                 .i_fifo_ptr_reset(i_fifo_ptr_reset),
@@ -91,6 +93,7 @@ module data_lane_array #(
                 .o_miso_empty(rr_data_empty[ii]),
                 .o_miso_full(rr_miso_full[ii]),
                 .o_route_done(rr_route_done[ii]),
+                .o_idle(rr_idle[ii]),
                 .o_valid(rr_data_valid[ii])
             );
         end
@@ -98,9 +101,10 @@ module data_lane_array #(
 
     always_comb begin
         o_fifo_empty = &rr_data_empty;
+        o_fifo_full = &rr_miso_full;
         o_data_valid = rr_data_valid;
-        o_fifo_full = rr_miso_full;
         o_route_done = &rr_route_done;
+        o_idle = &rr_idle;
     end
 
 endmodule

@@ -3,7 +3,7 @@ module weight_router #(
     parameter int SPAD_DATA_WIDTH = 64,
     parameter int SPAD_N = SPAD_DATA_WIDTH / DATA_WIDTH,
     parameter int ADDR_WIDTH = 8,
-    parameter int COLUMNS = 4,
+    parameter int COUNT = 4,
     parameter int MISO_DEPTH = 16
 )(
     input logic i_clk,
@@ -11,7 +11,6 @@ module weight_router #(
     input logic i_en,
     input logic i_reg_clear,
     input logic i_fifo_pop_en,
-    input logic i_fifo_ptr_reset,
 
     // Precision mode - 0: 8x8, 1: 4x4: 2: 2x2
     input logic [1:0] i_p_mode,
@@ -19,7 +18,8 @@ module weight_router #(
     // Convolution mode - 0: PWise, 1: DWise
     input logic i_conv_mode,
 
-    // Activation related signals
+    // Array dimensions
+    input logic [ADDR_WIDTH-1:0] i_o_c,
     input logic [ADDR_WIDTH-1:0] i_i_c_size,
     input logic [ADDR_WIDTH-1:0] i_o_c_size,
 
@@ -34,13 +34,13 @@ module weight_router #(
     output logic o_read_done,
 
     // Output signals
-    output logic [COLUMNS-1:0][DATA_WIDTH-1:0] o_data,
-    output logic [COLUMNS-1:0] o_data_valid,
+    output logic [COUNT-1:0][DATA_WIDTH-1:0] o_data,
+    output logic [COUNT-1:0] o_data_valid,
 
     // Status signals
     output logic o_ready,
-    output logic o_context_done,
-    output logic o_done
+    output logic o_context_done, // Done with current set of values
+    output logic o_done // Done with all output values
 );
     // SPAD related signals
     // We will move this to top level module
@@ -56,18 +56,18 @@ module weight_router #(
     logic tr_data_valid;
 
     // Controller to Router and Tile Reader
-    logic route_en, reg_clear;
+    logic route_en, reg_clear, tr_clear;
 
     // Controller to Router Array
-    logic [COLUMNS-1:0] id;
-    logic [ADDR_WIDTH-1:0] start_addr, end_addr;
-    logic addr_write_en, fifo_pop_en, fifo_pop_ready, fifo_empty;
-
+    logic fifo_pop_en, fifo_route_done, fifo_empty, fifo_full, fifo_clear, fifo_idle;
+    logic [ADDR_WIDTH-1:0] dl_start_addr, dl_end_addr;
+    logic [COUNT-1:0] dl_id;
+    logic dl_addr_write_en;
 
     spad #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(SPAD_DATA_WIDTH)
-    ) input_spad (
+    ) wr_spad (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_write_en(i_spad_write_en),
@@ -82,68 +82,74 @@ module weight_router #(
     tile_reader #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(SPAD_DATA_WIDTH)
-    ) input_tile_reader (
+    ) wr_tile_reader (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_en(route_en),
-        .i_reg_clear(reg_clear),
+        .i_reg_clear(reg_clear || tr_clear),
         .i_start_addr(i_start_addr),
         .i_addr_end(i_addr_end),
         .i_data_in(spad_data_out),
         .i_data_in_valid(spad_data_out_valid),
         .o_spad_read_en(spad_read_en),
-        .o_spad_read_done(o_read_done),
+        .o_spad_read_done(o_read_done), // We kind of assume that all the data is in the SPAD
         .o_spad_read_addr(spad_read_addr),
         .o_addr(tr_addr),
         .o_data(tr_data),
         .o_data_valid(tr_data_valid)
     );
 
-    router_controller #(
-        .COUNT(COLUMNS),
+    logic fifo_reset;
+
+    wr_controller #(
+        .COLUMN(COUNT),
         .ADDR_WIDTH(ADDR_WIDTH)
-    ) input_controller (
+    ) wr_controller (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_en(i_en),
         .i_reg_clear(i_reg_clear),
         .i_pop_en(i_fifo_pop_en),
-        .i_conv_mode(i_conv_mode),
-        .i_start_addr(i_start_addr),
-        .i_i_size(i_i_size),
-        .i_o_size(i_o_size),
-        .i_stride(i_stride),
+        .i_o_c(i_o_c),
         .i_i_c_size(i_i_c_size),
-        .o_id(id),
-        .o_start_addr(start_addr),
-        .o_end_addr(end_addr),
-        .o_addr_write_en(addr_write_en),
+        .i_o_c_size(i_o_c_size),
+        .i_start_addr(i_start_addr),
+        .o_dl_start_addr(dl_start_addr),
+        .o_dl_end_addr(dl_end_addr),
+        .o_dl_id(dl_id),
+        .o_dl_addr_write_en(dl_addr_write_en),
         .o_route_en(route_en),
         .o_pop_en(fifo_pop_en),
         .o_reg_clear(reg_clear),
-        .i_fifo_pop_ready(fifo_pop_ready),
+        .o_fifo_reset(fifo_reset),
+        .o_fifo_clear(fifo_clear),
+        .o_tr_clear(tr_clear),
+        .i_fifo_full(fifo_full),
+        .i_fifo_route_done(fifo_route_done),
         .i_fifo_empty(fifo_empty),
+        .i_fifo_idle(fifo_idle),
         .o_done(o_done),
-        .o_ready(o_ready),
-        .o_context_done(o_context_done)
+        .o_context_done(o_context_done),
+        .o_ready(o_ready)
     );
 
     data_lane_array #(
-        .COUNT(COLUMNS),
+        .COUNT(COUNT),
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH),
         .SPAD_DATA_WIDTH(SPAD_DATA_WIDTH),
         .SPAD_N(SPAD_N),
         .MISO_DEPTH(MISO_DEPTH)
-    ) input_router_array (
+    ) wr_dl_array (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_reg_clear(reg_clear),
-        .i_fifo_ptr_reset(i_fifo_ptr_reset),
-        .i_id(id),
-        .i_start_addr(start_addr),
-        .i_end_addr(end_addr),
-        .i_addr_write_en(addr_write_en),
+        .i_fifo_clear(fifo_clear),
+        .i_fifo_ptr_reset(fifo_reset),
+        .i_id(dl_id),
+        .i_start_addr(dl_start_addr),
+        .i_end_addr(dl_end_addr),
+        .i_addr_write_en(dl_addr_write_en),
         .i_ac_en(route_en),
         .i_data(tr_data),
         .i_addr(tr_addr),
@@ -152,9 +158,10 @@ module weight_router #(
         .i_p_mode(i_p_mode),
         .o_data(o_data),
         .o_data_valid(o_data_valid),
-        .o_fifo_full(),
+        .o_fifo_full(fifo_full),
         .o_fifo_empty(fifo_empty),
-        .o_route_done(fifo_pop_ready)
+        .o_route_done(fifo_route_done),
+        .o_idle(fifo_idle)
     );
 
 endmodule

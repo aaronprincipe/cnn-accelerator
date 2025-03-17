@@ -7,7 +7,7 @@ module data_lane #(
     parameter int MISO_DEPTH = 32,
     parameter int INDEX = 0
 ) (
-    input logic i_clk, i_nrst, i_reg_clear,
+    input logic i_clk, i_nrst, i_reg_clear, i_fifo_clear,
 
     // Control signals
     input logic i_ac_en, i_miso_pop_en, i_fifo_ptr_reset,
@@ -24,9 +24,10 @@ module data_lane #(
     // MISO FIFO related signals
     input logic [1:0] i_p_mode,
     output logic [DATA_WIDTH-1:0] o_data,
-    output logic o_miso_empty, o_miso_full, o_route_done, o_valid
+    output logic o_miso_empty, o_miso_full, o_route_done, o_idle, o_valid
 );
     logic [ADDR_WIDTH-1:0] start_addr, end_addr;
+    logic [ADDR_WIDTH-1:0] addr_offset;
     logic [0:SPAD_N-1][ADDR_WIDTH-1:0] spad_addr;
     logic [SPAD_N-1:0] data_hit;
 
@@ -34,11 +35,11 @@ module data_lane #(
     logic miso_full, miso_empty, miso_enough_slots, route_done;
 
     logic [SPAD_N-1:0] lower_bit;
-    logic [SPAD_N-1:0] f_data_hit;
+    logic [SPAD_N-1:0] f_data_hit, t_data_hit;
     logic [SPAD_DATA_WIDTH-1:0] f_data;
 
     logic write_en;
-    assign write_en = i_data_valid & i_ac_en & miso_enough_slots;
+    assign write_en = i_data_valid & i_ac_en;
 
     genvar ii;
     generate
@@ -59,11 +60,13 @@ module data_lane #(
             end else if (i_addr_write_en) begin
                 start_addr <= i_start_addr;
                 end_addr <= i_end_addr;
+            end else if (write_en) begin
+                start_addr <= start_addr + addr_offset;
             end
         end
     end
-    logic [ADDR_WIDTH-1:0] check;
 
+    logic [ADDR_WIDTH-1:0] check;
     assign check = i_addr * SPAD_N + SPAD_N - 1;
 
     // Compare address
@@ -73,11 +76,12 @@ module data_lane #(
         end else begin
             if (i_reg_clear) begin
                 route_done <= 0;
-            end else if (i_data_valid & i_ac_en) begin
-                route_done <= (check) >= end_addr;
+            end else if (i_ac_en) begin
+                route_done <= (start_addr) >= end_addr;
             end
         end
     end
+    
 
     // We need a buffer fifo that will adjust the data to the correct format
     // depending on the data hit
@@ -101,13 +105,33 @@ module data_lane #(
                 end
             end
 
-            f_data_hit = data_hit >> lower_bit;
+            t_data_hit = data_hit >> lower_bit;
             f_data = i_data >> lower_bit * SPAD_N;
+
+            for (int i = 0; i < SPAD_N; i = i + 1) begin
+                if (t_data_hit[i] & ((slots + i) < MISO_DEPTH ) & ~miso_full) begin
+                    f_data_hit[i] = 1;
+                end else begin
+                    f_data_hit[i] = 0;
+                end
+            end
         end else begin
             f_data_hit = 0;
             f_data = 0;
         end
     end
+
+    // For updating the starting address
+    always_comb begin
+        if (write_en) begin
+            addr_offset = 0;
+            for (int i = 0; i < SPAD_N; i = i + 1) begin
+                addr_offset = addr_offset + f_data_hit[i];
+            end
+        end
+    end
+
+    logic [$clog2(MISO_DEPTH):0] slots;
 
     miso_fifo #(
         .DEPTH(MISO_DEPTH),
@@ -117,7 +141,7 @@ module data_lane #(
     ) miso_fifo (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
-        .i_clear(i_reg_clear),
+        .i_clear(i_fifo_clear),
         .i_write_en(f_data_hit[0] & write_en),
         .i_pop_en(i_miso_pop_en),
         .i_r_pointer_reset(i_fifo_ptr_reset),
@@ -128,13 +152,16 @@ module data_lane #(
         .o_empty(miso_empty),
         .o_full(miso_full),
         .o_pop_valid(o_valid),
-        .o_enough_slots(miso_enough_slots)
+        .o_enough_slots(miso_enough_slots),
+        .o_slots(slots)
     );
 
     always_comb begin
         o_miso_empty = miso_empty;
         // Basically, if the FIFO is full or there are not enough slots, then the FIFO is full
-        o_miso_full = miso_full || ~miso_enough_slots;
+        //o_miso_full = miso_full || ~miso_enough_slots;
+        o_miso_full = miso_full;
         o_route_done = route_done;
+        o_idle = miso_full || route_done;
     end
 endmodule

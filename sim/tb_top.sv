@@ -14,12 +14,13 @@ module tb_top;
 
     // Signals
     logic i_clk, i_nrst, i_reg_clear, i_write_en, i_route_en;
+    logic i_conv_mode;
     logic [1:0] p_mode;
     logic [SRAM_DATA_WIDTH-1:0] i_data_in;
     logic [ADDR_WIDTH-1:0] i_write_addr;
     logic [ADDR_WIDTH-1:0] i_i_start_addr, i_i_addr_end;
-    logic [ADDR_WIDTH-1:0] i_size, o_size, stride, i_c_size, i_c; 
-    logic [ADDR_WIDTH-1:0] i_w_start_addr, i_w_addr_offset, i_route_size;
+    logic [ADDR_WIDTH-1:0] i_size, o_size, stride, i_c_size, i_c, o_c_size; 
+    logic [ADDR_WIDTH-1:0] i_w_start_addr, i_w_addr_end, i_route_size;
 
     logic [DATA_WIDTH*2-1:0] o_ofmap;
     logic o_ofmap_valid, o_done;
@@ -34,22 +35,23 @@ module tb_top;
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_reg_clear(i_reg_clear),
-        .i_p_mode(p_mode),
+        .i_conv_mode(i_conv_mode),
         .i_data_in(i_data_in),
         .i_write_addr(i_write_addr),
         .i_spad_select(i_spad_select),
         .i_write_en(i_write_en),
         .i_route_en(i_route_en),
-        .i_i_start_addr(i_i_start_addr),
-        .i_i_addr_end(i_i_addr_end),
+        .i_p_mode(p_mode),
         .i_i_size(i_size),
         .i_o_size(o_size),
         .i_i_c_size(i_c_size),
+        .i_o_c_size(o_c_size),
         .i_i_c(i_c),
         .i_stride(stride),
+        .i_i_start_addr(i_i_start_addr),
+        .i_i_addr_end(i_i_addr_end),
         .i_w_start_addr(i_w_start_addr),
-        .i_w_addr_offset(i_w_addr_offset),
-        .i_route_size(i_route_size),
+        .i_w_addr_end(i_w_addr_end),
         .o_ofmap(o_ofmap),
         .o_ofmap_valid(o_ofmap_valid),
         .o_done(o_done)
@@ -80,27 +82,29 @@ module tb_top;
         i_i_start_addr = 0;
         i_i_addr_end = 0;
         i_w_start_addr = 0;
-        i_w_addr_offset = 1;
+        i_w_addr_end = 1;
         i_route_size = 9;
         i_route_en = 0;
+        i_conv_mode = 0;
 
         // Retrieve command-line arguments
-        if (!$value$plusargs("i_i_size=%d", i_size)) i_size = 10;
-        if (!$value$plusargs("i_c_size=%d", i_c_size)) i_c_size = 2;
+        if (!$value$plusargs("i_i_size=%d", i_size)) i_size = 5;
+        if (!$value$plusargs("i_c_size=%d", i_c_size)) i_c_size = 5;
+        if (!$value$plusargs("o_c_size=%d", o_c_size)) o_c_size = 5;
         if (!$value$plusargs("i_c=%d", i_c)) i_c = 0;
-        if (!$value$plusargs("i_o_size=%d", o_size)) o_size = 8;
+        if (!$value$plusargs("i_o_size=%d", o_size)) o_size = 5;
         if (!$value$plusargs("i_stride=%d", stride)) stride = 1;
         if (!$value$plusargs("i_p_mode=%d", p_mode)) p_mode = 2'b00;
 
         #10;
         i_nrst = 1;
 
-        // Open output file
-        output_file = $fopen("output.txt", "w");
-        if (output_file == 0) begin
-            $display("Error opening output file!");
-            $finish;
-        end
+        // // Open output file
+        // output_file = $fopen("output.txt", "w");
+        // if (output_file == 0) begin
+        //     $display("Error opening output file!");
+        //     $finish;
+        // end
 
         // Write to weight SRAM
         file = $fopen("kernel.txt", "r");
@@ -121,8 +125,9 @@ module tb_top;
             #10; // Wait for one clock cycle
             i_write_addr = i_write_addr + 1;
         end
-        
+        i_w_addr_end = i_write_addr - 1;
         i_write_en = 0;
+        #10;
         i_write_addr = 0;
         $fclose(file);
 
@@ -156,6 +161,7 @@ module tb_top;
             @(posedge i_clk); // when clock signal gets high
             counter++; // increase counter by 1
         end
+
     end
 
     // Monitor and write to output file whenever o_ofmap_valid is high
@@ -170,7 +176,7 @@ module tb_top;
         if (o_done) begin
             $display("Simulation completed: o_done asserted.");
             $display("Total cycles: %d", counter);
-            $fclose(output_file);
+            // $fclose(output_file);
             $finish;
         end
     end
