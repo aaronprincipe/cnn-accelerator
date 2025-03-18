@@ -74,6 +74,36 @@ module top #(
     logic output_done;
     logic [ADDR_WIDTH-1:0] o_c;
 
+    // Instantiate input router
+    logic [ROWS-1:0] ir_data_valid;
+    logic [ROWS-1:0][DATA_WIDTH-1:0] ir_ifmap;
+    logic [0:ROWS-1][DATA_WIDTH-1:0] s_ifmap;
+    logic [0:ROWS-1] s_ifmap_valid;
+
+    genvar ii;
+    generate
+        for (ii=0; ii < ROWS; ii++) begin
+            assign s_ifmap[ii] = ir_ifmap[ii];
+            assign s_ifmap_valid[ii] = ir_data_valid[ii];
+        end
+    endgenerate
+
+    // Instantiate weight router
+    logic [COLUMNS-1:0] wr_data_valid;
+    logic [COLUMNS-1:0][DATA_WIDTH-1:0] wr_weight;
+    logic [0:COLUMNS-1][DATA_WIDTH-1:0] s_weight;
+    logic [0:COLUMNS-1] s_weight_valid;
+
+    genvar jj;
+    generate
+        for (ii=0; ii < COLUMNS; ii++) begin
+            assign s_weight[ii] = wr_weight[ii];
+            assign s_weight_valid[ii] = wr_data_valid[ii];
+        end
+    endgenerate
+
+    logic [0:ROWS-1][DATA_WIDTH*2-1:0] ofmap;
+
     top_controller #(
         .ROWS(ROWS),
         .COLUMNS(COLUMNS),
@@ -99,20 +129,6 @@ module top #(
         .i_wr_done(wr_done),
         .o_done(o_done)
     );
-
-    // Instantiate input router
-    logic [ROWS-1:0] ir_data_valid;
-    logic [ROWS-1:0][DATA_WIDTH-1:0] ir_ifmap;
-    logic [0:ROWS-1][DATA_WIDTH-1:0] s_ifmap;
-    logic [0:ROWS-1] s_ifmap_valid;
-
-    genvar ii;
-    generate
-        for (ii=0; ii < ROWS; ii++) begin
-            assign s_ifmap[ii] = ir_ifmap[ii];
-            assign s_ifmap_valid[ii] = ir_data_valid[ii];
-        end
-    endgenerate
 
     input_router #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -149,20 +165,6 @@ module top #(
         .o_tile_done(ir_tile_done)
     );
 
-    // Instantiate weight router
-    logic [COLUMNS-1:0] wr_data_valid;
-    logic [COLUMNS-1:0][DATA_WIDTH-1:0] wr_weight;
-    logic [0:COLUMNS-1][DATA_WIDTH-1:0] s_weight;
-    logic [0:COLUMNS-1] s_weight_valid;
-
-    genvar jj;
-    generate
-        for (ii=0; ii < COLUMNS; ii++) begin
-            assign s_weight[ii] = wr_weight[ii];
-            assign s_weight_valid[ii] = wr_data_valid[ii];
-        end
-    endgenerate
-    
     weight_router #(
         .DATA_WIDTH(DATA_WIDTH),
         .SPAD_DATA_WIDTH(SPAD_DATA_WIDTH),
@@ -202,9 +204,9 @@ module top #(
         .i_clk(i_clk),
         .i_nrst(i_nrst),
         .i_mode(i_p_mode),
-        .i_reg_clear(i_reg_clear || or_done), 
+        .i_reg_clear(i_reg_clear), 
         .i_pe_en(),
-        .i_psum_out_en(psum_out_en),
+        .i_psum_out_en(),
         .i_scan_en(),
         .i_ifmap(s_ifmap),
         .i_ifmap_valid(s_ifmap_valid),
@@ -213,8 +215,6 @@ module top #(
         .o_ofmap(ofmap),
         .o_ofmap_valid()
     );
-
-    logic [0:ROWS-1][DATA_WIDTH*2-1:0] ofmap;
 
     // output_router #(
     //     .SPAD_ADDR_WIDTH(ADDR_WIDTH),

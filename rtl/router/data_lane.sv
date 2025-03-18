@@ -38,6 +38,8 @@ module data_lane #(
     logic [SPAD_N-1:0] f_data_hit, t_data_hit;
     logic [SPAD_DATA_WIDTH-1:0] f_data;
 
+    logic [$clog2(MISO_DEPTH):0] slots;
+
     logic write_en;
     assign write_en = i_data_valid & i_ac_en;
 
@@ -130,8 +132,6 @@ module data_lane #(
             end
         end
     end
-
-    logic [$clog2(MISO_DEPTH):0] slots;
 
     miso_fifo #(
         .DEPTH(MISO_DEPTH),
