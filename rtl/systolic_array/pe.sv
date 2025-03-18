@@ -25,11 +25,13 @@ module pe #(
     output logic [DATA_WIDTH*2-1:0] o_ofmap,
     output logic o_ofmap_valid
 );
-
     logic [DATA_WIDTH-1:0] reg_ifmap, reg_weight;
     logic reg_ifmap_valid, reg_weight_valid;
     logic [DATA_WIDTH*2-1:0] reg_psum, o_multiplier, reg_psum_out;
     logic reg_psum_valid;
+
+    logic pe_en;
+    assign pe_en = i_ifmap_valid & i_weight_valid;
 
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if (~i_nrst) begin
@@ -39,7 +41,7 @@ module pe #(
             if (i_reg_clear) begin
                 reg_ifmap <= 0;
                 reg_weight <= 0;
-            end else if (i_pe_en) begin
+            end else if (pe_en) begin
                 reg_ifmap <= i_ifmap;
                 reg_weight <= i_weight;
                 reg_ifmap_valid <= i_ifmap_valid;
@@ -58,7 +60,7 @@ module pe #(
     );
 
     logic mac_en;
-    assign mac_en = i_pe_en & (reg_ifmap_valid & reg_weight_valid);
+    assign mac_en = reg_ifmap_valid & reg_weight_valid;
 
     // Multiplier and Accumulator
     always_ff @(posedge i_clk or negedge i_nrst) begin

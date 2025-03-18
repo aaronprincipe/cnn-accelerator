@@ -6,9 +6,9 @@ data_width = 8
 spad_data_width = 64
 spad_n = spad_data_width // data_width
 addr_width = 8
-rows = 16
-columns = 1
-miso_depth = 32
+rows = 4
+columns = 4
+miso_depth = 4
 mpp_depth = 16
 
 header = f"""`define DATA_WIDTH {data_width}
@@ -44,11 +44,11 @@ print("Total Area:", total_area)
 
 components = [
     ("Controller", "top_controller_inst"),
-    ("Input SPAD", "ir_inst/input_sram"), 
+    ("Input SPAD", "ir_inst/ir_spad"), 
     ("Input Router", "ir_inst"), 
-    ("Weight SPAD", "wr_inst/weight_sram"),
+    ("Weight SPAD", "wr_inst/wr_spad"),
     ("Weight Router", "wr_inst"),
-    ("Output Router", "or_inst"), 
+    # ("Output Router", "or_inst"),
     ("Systolic Array", "systolic_array_inst"),
 ]
 
