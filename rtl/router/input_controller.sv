@@ -65,6 +65,7 @@ module ir_controller #(
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if (~i_nrst) begin
             o_route_en <= 0;
+            o_context_done <= 0;
             o_done <= 0;
             o_pop_en <= 0;
             o_reg_clear <= 0;
@@ -84,6 +85,7 @@ module ir_controller #(
             state <= IDLE;
         end else if (i_reg_clear) begin
             o_route_en <= 0;
+            o_context_done <= 0;
             o_done <= 0;
             o_pop_en <= 0;
             o_reg_clear <= 0;
