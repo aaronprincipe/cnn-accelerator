@@ -63,14 +63,14 @@ module top #(
     end
 
     // Instantiate top controller
-    logic ir_en, wr_en;
+    logic ir_en, wr_en, or_en;
     logic ir_pop_en, wr_pop_en;
     logic ir_ready, wr_ready;
     logic ir_context_done, wr_context_done;
     logic ir_done, wr_done;
     logic ir_tile_done, wr_tile_done;
     logic ir_reg_clear, wr_reg_clear;
-
+    logic pe_en, psum_out_en, scan_en;
     logic output_done;
     logic [ADDR_WIDTH-1:0] o_c;
 
@@ -115,8 +115,12 @@ module top #(
         .i_route_en(i_route_en),
         .o_ir_en(ir_en),
         .o_wr_en(wr_en),
+        .o_or_en(or_en),
         .o_ir_pop_en(ir_pop_en),
         .o_wr_pop_en(wr_pop_en),
+        .o_pe_en(pe_en),
+        .o_psum_out_en(psum_out_en),
+        .o_scan_en(scan_en),
         .i_ir_ready(ir_ready),
         .i_wr_ready(wr_ready),
         .i_ir_context_done(ir_context_done),
@@ -205,9 +209,9 @@ module top #(
         .i_nrst(i_nrst),
         .i_mode(i_p_mode),
         .i_reg_clear(i_reg_clear), 
-        .i_pe_en(),
-        .i_psum_out_en(),
-        .i_scan_en(),
+        .i_pe_en(pe_en),
+        .i_psum_out_en(psum_out_en),
+        .i_scan_en(scan_en),
         .i_ifmap(s_ifmap),
         .i_ifmap_valid(s_ifmap_valid),
         .i_weight(s_weight),
@@ -216,19 +220,19 @@ module top #(
         .o_ofmap_valid()
     );
 
-    // output_router #(
-    //     .SPAD_ADDR_WIDTH(ADDR_WIDTH),
-    //     .SPAD_DATA_WIDTH(16),
-    //     .ROWS(ROWS),
-    //     .DATA_WIDTH(DATA_WIDTH)
-    // ) or_inst (
-    //     .i_clk(i_clk),
-    //     .i_nrst(i_nrst),
-    //     .i_en(or_en),
-    //     .i_ifmap(ofmap),
-    //     .i_valid({ROWS{1'b1}}),
-    //     .o_data_out(o_ofmap),
-    //     .o_valid(o_ofmap_valid),
-    //     .o_done(or_done)
-    // );
+    output_router #(
+        .SPAD_ADDR_WIDTH(ADDR_WIDTH),
+        .SPAD_DATA_WIDTH(16),
+        .ROWS(ROWS),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) or_inst (
+        .i_clk(i_clk),
+        .i_nrst(i_nrst),
+        .i_en(or_en),
+        .i_ifmap(ofmap),
+        .i_valid({ROWS{1'b1}}),
+        .o_data_out(o_ofmap),
+        .o_valid(o_ofmap_valid),
+        .o_done()
+    );
 endmodule

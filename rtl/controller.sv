@@ -27,9 +27,12 @@ module top_controller # (
     input logic i_route_en,
     output logic o_ir_en,
     output logic o_wr_en,
+    output logic o_or_en,
     output logic o_ir_pop_en,
     output logic o_wr_pop_en,
     output logic o_pe_en, // Systolic array
+    output logic o_psum_out_en, // Systolic array
+    output logic o_scan_en, // Systolic array
 
     // Ready to Pop signals
     input logic i_ir_ready,
@@ -53,6 +56,7 @@ module top_controller # (
     output logic o_done
 );
     logic [2:0] state;
+    logic [ROWS:0] cntr;
     parameter int IDLE = 0;
     parameter int CLEAR = 1;
     parameter int ACTIVATION_ROUTING = 2;
@@ -76,19 +80,33 @@ module top_controller # (
             o_wr_en <= 0;
             o_ir_pop_en <= 0;
             o_wr_pop_en <= 0;
+            o_ir_en <= 0;
+            o_wr_en <= 0;
+            o_pe_en <= 0;
+            o_or_en <= 0;
+            o_psum_out_en <= 0;
+            o_scan_en <= 0;
             o_ir_reg_clear <= 0;
             o_wr_reg_clear <= 0;
             o_o_c <= 0;
             o_done <= 0;
+            cntr <= 0;
             state <= IDLE;
         end else if (i_reg_clear) begin
             o_wr_en <= 0;
             o_ir_pop_en <= 0;
             o_wr_pop_en <= 0;
+            o_ir_en <= 0;
+            o_wr_en <= 0;
+            o_pe_en <= 0;
+            o_or_en <= 0;
+            o_psum_out_en <= 0;
+            o_scan_en <= 0;
             o_ir_reg_clear <= 0;
             o_wr_reg_clear <= 0;
             o_o_c <= 0;
             o_done <= 0;
+            cntr <= 0;
             state <= IDLE;
         end else begin
             case (state)
@@ -139,10 +157,31 @@ module top_controller # (
                 end
                 
                 // Given row and column, estimate how many cycles it will take to compute
-                // For now, we will assume it takes 1 cycle to compute
                 COMPUTE: begin
+                    if (cntr < ROWS * COLUMNS) begin
+                        o_pe_en <= 1;
+                        cntr <= cntr + 1;
+                    end else begin
+                        o_pe_en <= 0;
+                        cntr <= 0;
+                        o_psum_out_en <= 1;
+                        state <= OUTPUT_ROUTING;
+                    end
+                end
 
-                    state <= IDLE;
+                OUTPUT_ROUTING: begin
+                    o_psum_out_en <= 0;
+                    
+                    if (cntr < COLUMNS) begin
+                        o_scan_en <= 1;
+                        o_or_en <= 1;
+                        cntr <= cntr + 1;
+                    end else begin
+                        o_scan_en <= 0;
+                        o_or_en <= 0;
+                        cntr <= 0;
+                        state <= IDLE;
+                    end
                 end
             endcase
         end

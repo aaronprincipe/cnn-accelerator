@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
-`include "rtl/global.svh"
+`include "../rtl/global.svh"
+`include "tb_top.svh"
 
 module tb_top;
     localparam int SRAM_DATA_WIDTH = `SPAD_DATA_WIDTH;
@@ -59,16 +60,16 @@ module tb_top;
 
     initial begin
         // Iverilog
-        $dumpfile("tb.vcd");
-        $dumpvars(0, tb_top);
+        // $dumpfile("tb.vcd");
+        // $dumpvars(0, tb_top);
 
         // VCS 
-        // $vcdplusfile("tb_top.vpd");
-        // $vcdpluson;
-        // $sdf_annotate("../mapped/top.sdf", dut);
+        $vcdplusfile("tb_top.vpd");
+        $vcdpluson;
+        $sdf_annotate("../mapped/top_mapped.sdf", dut);
         // Prime Time        
-        // $dumpfile("tb_top.dump");
-        // $dumpvars(0, tb_top);
+        $dumpfile("tb_top.dump");
+        $dumpvars(0, tb_top);
     end
 
     // Testbench initialization
@@ -86,15 +87,22 @@ module tb_top;
         i_route_size = 9;
         i_route_en = 0;
         i_conv_mode = 0;
+        i_size = `INPUT_SIZE;
+        i_c_size = `CHANNEL_SIZE;
+        o_c_size = `OUTPUT_CHANNEL;
+        i_c = `CHANNEL;
+        o_size = `OUTPUT_SIZE;
+        stride = `STRIDE;
+        p_mode = `PRECISION;
 
-        // Retrieve command-line arguments
-        if (!$value$plusargs("i_i_size=%d", i_size)) i_size = 5;
-        if (!$value$plusargs("i_c_size=%d", i_c_size)) i_c_size = 5;
-        if (!$value$plusargs("o_c_size=%d", o_c_size)) o_c_size = 5;
-        if (!$value$plusargs("i_c=%d", i_c)) i_c = 0;
-        if (!$value$plusargs("i_o_size=%d", o_size)) o_size = 5;
-        if (!$value$plusargs("i_stride=%d", stride)) stride = 1;
-        if (!$value$plusargs("i_p_mode=%d", p_mode)) p_mode = 2'b00;
+        // // Retrieve command-line arguments
+        // if (!$value$plusargs("i_i_size=%d", i_size)) i_size = 5;
+        // if (!$value$plusargs("i_c_size=%d", i_c_size)) i_c_size = 5;
+        // if (!$value$plusargs("o_c_size=%d", o_c_size)) o_c_size = 5;
+        // if (!$value$plusargs("i_c=%d", i_c)) i_c = 0;
+        // if (!$value$plusargs("i_o_size=%d", o_size)) o_size = 5;
+        // if (!$value$plusargs("i_stride=%d", stride)) stride = 1;
+        // if (!$value$plusargs("i_p_mode=%d", p_mode)) p_mode = 2'b00;
 
         #10;
         i_nrst = 1;

@@ -200,10 +200,6 @@ def main():
 
     # output_to_file(format_output(flatten_2d_array(output)), 1, "golden_output.txt")
 
-    sim_command = "xargs -a filelist.txt iverilog -g2012 -o dsn"
-    result = subprocess.run(sim_command, shell=True, capture_output=True, text=True)
-    sim_error = result.stderr
-
     # defaults to 8-bit precision
     p_mode = 0
     if precision == 4:
@@ -211,15 +207,25 @@ def main():
     elif precision == 2:
         p_mode = 2
 
-    # To add specific which channel to convolve
-    if not sim_error:
-        print(f"input_size: {input_size}, channels: {channels}, output_size: {output_size}, stride: {stride}, precision: {precision}")
-        sim_command = f'vvp dsn +i_i_size={input_size} +i_c_size={channels} +o_c_size={channels} +i_c={0} +i_o_size={output_size} +i_stride={stride} +i_p_mode={p_mode}'
-        result = subprocess.run(sim_command, shell=True, capture_output=True, text=True)
-        print(result.stdout)
-    else:
-        print(sim_error)
+    header = f"""`define INPUT_SIZE {input_size}
+    `define CHANNEL_SIZE {channels}
+    `define OUTPUT_CHANNEL {channels}
+    `define CHANNEL {0}
+    `define OUTPUT_SIZE {output_size}
+    `define STRIDE {stride}
+    `define PRECISION {p_mode}"""
 
+    with open("tb_top.svh", "w") as file:
+        file.write(header)
+    
+    print("tb_top.svh file has been generated.")
+
+    vcs_cmd = "vcs tb_top.sv ../mapped/top_mapped.v /cad/tools/libraries/dwc_logic_in_gf22fdx_sc7p5t_116cpp_base_csc20l/GF22FDX_SC7P5T_116CPP_BASE_CSC20L_FDK_RELV02R80/model/verilog/GF22FDX_SC7P5T_116CPP_BASE_CSC20L.v /cad/tools/libraries/dwc_logic_in_gf22fdx_sc7p5t_116cpp_base_csc20l/GF22FDX_SC7P5T_116CPP_BASE_CSC20L_FDK_RELV02R80/model/verilog/prim.v -sverilog -full64 -debug_pp +neg_tchk -R -l vcs.log"
+    # To add specific which channel to convolve
+    
+
+    result = subprocess.run(vcs_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    print(result.stdout)
     # # Check if the difference of output and golden_output
     # sim_command = "diff output.txt golden_output.txt"
     # result = subprocess.run(sim_command, shell=True, capture_output=True, text=True)

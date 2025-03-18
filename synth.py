@@ -48,7 +48,7 @@ components = [
     ("Input Router", "ir_inst"), 
     ("Weight SPAD", "wr_inst/wr_spad"),
     ("Weight Router", "wr_inst"),
-    # ("Output Router", "or_inst"),
+    ("Output Router", "or_inst"),
     ("Systolic Array", "systolic_array_inst"),
 ]
 
@@ -102,3 +102,14 @@ with open(txt_filename, mode="w", newline="") as file:
             file.write(f"{name}\t| n/a\t| n/a\n")
 
 print(f"Area data has been saved to {txt_filename}")
+
+# Prepend with timescale on synthesized verilog file
+mapped_path = "mapped/top_mapped.v"
+
+with open(mapped_path, "r") as f:
+    lines = f.readlines()
+
+lines.insert(0, "`timescale 1ns / 1ps\n")
+
+with open(mapped_path, "w") as f:
+    f.writelines(lines)
