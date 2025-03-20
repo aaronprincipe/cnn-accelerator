@@ -53,9 +53,11 @@ module top_controller # (
     // Finished computing
     input logic i_ir_done,
     input logic i_wr_done,
-    output logic o_done
+    output logic o_done,
+    output logic [2:0] o_state
 );
     logic [2:0] state;
+    assign o_state = state;
     logic [ROWS:0] cntr;
     parameter int IDLE = 0;
     parameter int CLEAR = 1;

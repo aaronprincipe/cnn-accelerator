@@ -43,7 +43,8 @@ module wr_controller #(
     input logic i_fifo_idle,
     output logic o_done,
     output logic o_context_done,
-    output logic o_ready
+    output logic o_ready,
+    output logic [2:0] o_state
 );
     parameter int IDLE = 0;
     parameter int CLEAR = 1;
@@ -53,7 +54,7 @@ module wr_controller #(
     parameter int DATA_OUT = 5;
     
     logic [2:0] state;
-
+    assign o_state = state;
     logic route_en;
 
     logic [ADDR_WIDTH-1:0] o_c;
@@ -76,6 +77,7 @@ module wr_controller #(
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
             o_ready <= 0;
+            o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
             o_dl_end_addr <= 0;
             o_dl_id <= 0;
@@ -93,6 +95,7 @@ module wr_controller #(
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
             o_ready <= 0;
+            o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
             o_dl_end_addr <= 0;
             o_dl_id <= 0;

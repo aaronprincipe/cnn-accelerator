@@ -48,7 +48,8 @@ module ir_controller #(
     output logic o_done,
     output logic o_context_done,
     output logic o_tile_done,
-    output logic o_ready
+    output logic o_ready,
+    output logic [2:0] o_state
 );
     parameter int IDLE = 0;
     parameter int CLEAR = 1;
@@ -59,6 +60,7 @@ module ir_controller #(
     
     logic [2:0] state;
 
+    assign o_state = state;
     logic route_en;
     logic wr_o_reset;
     logic [ADDR_WIDTH-1:0] o_x, o_y, prev_addr;
