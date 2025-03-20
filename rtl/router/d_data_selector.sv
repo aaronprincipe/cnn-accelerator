@@ -47,6 +47,8 @@ module d_data_selector #(
     logic mpp_pop_en;
     assign mpp_pop_en = f_addr_hit[0];
 
+    logic mpp_empty;
+
     mpp_fifo #(
         .DEPTH(MPP_DEPTH),
         .DATA_WIDTH(ADDR_WIDTH),
@@ -62,13 +64,13 @@ module d_data_selector #(
         .i_data_hit(f_addr_hit),
         .o_peek_data(peek_addr),
         .o_peek_valid(peek_valid),
-        .o_empty(o_route_done),
+        .o_empty(mpp_empty),
         .o_full()
     );
 
     // Address comparator
     always_comb begin
-        if (i_en & i_data_valid) begin
+        if (i_en & i_data_valid & ~mpp_empty) begin
             for (int i = 0; i < SPAD_N; i++) begin
                 for (int j = 0; j < SPAD_N; j++) begin
                     if ((spad_addr[i] == peek_addr[j]) & peek_valid[j]) begin
@@ -107,6 +109,7 @@ module d_data_selector #(
     
     always_comb begin
         o_data_hit = f_addr_hit;
-        o_data = f_data_hit; 
+        o_data = f_data_hit;
+        o_route_done = mpp_empty;
     end
 endmodule
