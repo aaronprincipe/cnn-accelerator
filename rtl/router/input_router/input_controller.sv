@@ -22,6 +22,7 @@ module ir_controller #(
     input logic [ADDR_WIDTH-1:0] i_o_size,
     input logic [ADDR_WIDTH-1:0] i_i_c_size,
     input logic [ADDR_WIDTH-1:0] i_i_c,
+    input logic [ADDR_WIDTH-1:0] i_stride,
     input logic [ADDR_WIDTH-1:0] i_start_addr,
 
     // Data lane address assignment
@@ -66,8 +67,8 @@ module ir_controller #(
     logic clear_type; // 0 - Clear all, 1 - Clear only FIFO
 
     assign route_en = i_en & i_fifo_empty;
-    assign x_increment = o_x < i_o_size - 1;
-    assign y_increment = o_y < i_o_size - 1;
+    assign x_increment = o_x < (i_o_size * i_stride) - i_stride;;
+    assign y_increment = o_y < (i_o_size * i_stride) - i_stride;;
     assign xy_increment = x_increment || y_increment;
 
     logic [0:KERNEL_LENGTH-1][ADDR_WIDTH-1:0] addr;
@@ -170,11 +171,11 @@ module ir_controller #(
                 XY_INCREMENT: begin
                     o_dl_addr_write_en <= 0;
                     if (y_increment) begin
-                        o_y <= o_y + 1;
+                        o_y <= o_y + i_stride;
                     end else begin
                         if (x_increment) begin
                             o_y <= 0;
-                            o_x <= o_x + 1;
+                            o_x <= o_x + i_stride;
                         end else begin
                             o_x <= 0;
                             xy_done <= 1;

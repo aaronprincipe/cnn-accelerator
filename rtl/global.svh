@@ -4,5 +4,5 @@
 `define ADDR_WIDTH 8 // Fix when width isnt 8-bit
 `define ROWS 4
 `define COLUMNS 4
-`define MISO_DEPTH 8 // Minimum depth is 9
+`define MISO_DEPTH 16 // Minimum depth is 9
 `define MPP_DEPTH 9 // Minimum depth is 9

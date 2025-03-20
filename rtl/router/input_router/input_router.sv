@@ -25,6 +25,7 @@ module input_router #(
     input logic [ADDR_WIDTH-1:0] i_o_size,
     input logic [ADDR_WIDTH-1:0] i_i_c_size,
     input logic [ADDR_WIDTH-1:0] i_i_c,
+    input logic [ADDR_WIDTH-1:0] i_stride,
 
     // SPAD related signals
     input logic i_spad_write_en,
@@ -119,6 +120,7 @@ module input_router #(
         .i_o_size(i_o_size),
         .i_i_c_size(i_i_c_size),
         .i_i_c(i_i_c),
+        .i_stride(i_stride),
         .i_start_addr(i_start_addr),
         .o_dl_sw_addr(dl_sw_addr),
         .o_dl_start_addr(dl_start_addr),
@@ -141,7 +143,7 @@ module input_router #(
         .o_ready(o_ready)
     );
 
-    i_data_lane_array #(
+    data_lane_array #(
         .COUNT(COUNT),
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH),

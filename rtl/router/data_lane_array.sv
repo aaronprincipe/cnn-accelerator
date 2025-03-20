@@ -4,7 +4,8 @@ module data_lane_array #(
     parameter int ADDR_WIDTH = 8,
     parameter int DATA_WIDTH = 8,
     parameter int SPAD_N = SPAD_DATA_WIDTH / DATA_WIDTH,
-    parameter int MISO_DEPTH = 16
+    parameter int MISO_DEPTH = 16,
+    parameter int MPP_DEPTH = 9
 ) (
     input logic i_clk,
     input logic i_nrst,
@@ -12,9 +13,11 @@ module data_lane_array #(
     input logic i_cntr_clear,
     input logic i_fifo_clear,
     input logic i_fifo_ptr_reset,
+    input logic i_conv_mode, // Convolution mode - 0: PWise, 1: DWise
 
     // Address Reference
     input logic [COUNT-1:0] i_id,
+    input [0:MPP_DEPTH-1][ADDR_WIDTH-1:0] i_sw_addr,
     input logic [ADDR_WIDTH-1:0] i_start_addr,
     input logic [ADDR_WIDTH-1:0] i_end_addr,
     input logic i_addr_write_en,
@@ -74,6 +77,7 @@ module data_lane_array #(
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .SPAD_N(SPAD_N),
                 .MISO_DEPTH(MISO_DEPTH),
+                .MPP_DEPTH(MPP_DEPTH),
                 .INDEX(ii)
             ) data_lane (
                 .i_clk(i_clk),
@@ -83,8 +87,10 @@ module data_lane_array #(
                 .i_ac_en(i_ac_en),
                 .i_miso_pop_en(rr_pop_en[ii]),
                 .i_fifo_ptr_reset(i_fifo_ptr_reset),
+                .i_conv_mode(i_conv_mode),
                 .i_start_addr(i_start_addr),
                 .i_end_addr(i_end_addr),
+                .i_sw_addr(i_sw_addr),
                 .i_addr_write_en(i_addr_write_en & (i_id == ii)),
                 .i_data(i_data),
                 .i_data_valid(i_data_valid),
