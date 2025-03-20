@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 `include "../rtl/global.svh"
-`include "tb_top.svh"
+// `include "tb_top.svh"
 
 module tb_top;
     localparam int SRAM_DATA_WIDTH = `SPAD_DATA_WIDTH;
@@ -86,14 +86,14 @@ module tb_top;
         i_w_addr_end = 1;
         i_route_size = 9;
         i_route_en = 0;
-        i_conv_mode = 0;
-        i_size = `INPUT_SIZE;
-        i_c_size = `CHANNEL_SIZE;
-        o_c_size = `OUTPUT_CHANNEL;
-        i_c = `CHANNEL;
-        o_size = `OUTPUT_SIZE;
-        stride = `STRIDE;
-        p_mode = `PRECISION;
+        i_conv_mode = 1;
+        i_size = 5;
+        i_c_size = 3;
+        o_c_size = 3;
+        i_c = 0;
+        o_size = 3;
+        stride = 1;
+        p_mode = 0;
 
         // // Retrieve command-line arguments
         // if (!$value$plusargs("i_i_size=%d", i_size)) i_size = 5;
@@ -158,14 +158,53 @@ module tb_top;
             #10; // Wait for one clock cycle
             i_write_addr = i_write_addr + 1;
         end
-        i_i_addr_end = i_write_addr - 1;
         i_write_en = 0;
-        $fclose(file);
+        // Dwise
+        i_conv_mode = 1;
+        i_size = 5;
+        i_c_size = 3;
+        o_c_size = 3;
+        i_c = 0;
+        o_size = 3;
+        stride = 1;
+        p_mode = 0;
+
+        i_i_start_addr = 0;
+        i_i_addr_end = 9;
+        i_w_start_addr = 0;
+        i_w_addr_end = 3;
     
         #20;
         i_route_en = 1;
 
-        while(i_route_en == 1 & o_done != 1) begin // while SIG = "1"
+        wait (o_done == 1);
+        i_route_en = 0;
+        #10;
+        i_reg_clear = 1;
+        #10;
+        i_reg_clear = 0;
+        // Pwise
+        i_conv_mode = 0;
+        i_route_en = 1;
+        i_size = 5;
+        i_c_size = 5;
+        o_c_size = 5;
+        i_c = 0;
+        o_size = 5;
+        stride = 1;
+        p_mode = 0;
+
+        i_i_start_addr = 10;
+        i_i_addr_end = 25;
+        i_w_start_addr = 4;
+        i_w_addr_end = 19;
+
+        wait (o_done == 1);
+        $display("Routing done");
+        $display("Total cycles: %d", counter);
+        $finish;
+
+        while(i_route_en == 1) begin // while SIG = "1"
             @(posedge i_clk); // when clock signal gets high
             counter++; // increase counter by 1
         end
@@ -179,13 +218,13 @@ module tb_top;
         end
     end
 
-    // Terminate simulation when o_done is high
-    always @(posedge i_clk) begin
-        if (o_done) begin
-            $display("Simulation completed: o_done asserted.");
-            $display("Total cycles: %d", counter);
-            // $fclose(output_file);
-            $finish;
-        end
-    end
+    // // Terminate simulation when o_done is high
+    // always @(posedge i_clk) begin
+    //     if (o_done) begin
+    //         $display("Simulation completed: o_done asserted.");
+    //         $display("Total cycles: %d", counter);
+    //         // $fclose(output_file);
+    //         $finish;
+    //     end
+    // end
 endmodule
