@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-`include "../rtl/global.svh"
+`include "rtl/global.svh"
 // `include "tb_top.svh"
 
 module tb_top;
@@ -22,6 +22,9 @@ module tb_top;
     logic [ADDR_WIDTH-1:0] i_i_start_addr, i_i_addr_end;
     logic [ADDR_WIDTH-1:0] i_size, o_size, stride, i_c_size, i_c, o_c_size; 
     logic [ADDR_WIDTH-1:0] i_w_start_addr, i_w_addr_end, i_route_size;
+    logic [DATA_WIDTH*2-1:0] o_word;
+    logic o_word_valid;
+    logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c;
 
     logic [DATA_WIDTH*2-1:0] o_ofmap;
     logic o_ofmap_valid, o_done;
@@ -55,21 +58,26 @@ module tb_top;
         .i_w_addr_end(i_w_addr_end),
         .o_ofmap(o_ofmap),
         .o_ofmap_valid(o_ofmap_valid),
-        .o_done(o_done)
+        .o_done(o_done),
+        .o_word(o_word),
+        .o_word_valid(o_word_valid),
+        .o_o_x(o_o_x),
+        .o_o_y(o_o_y),
+        .o_o_c(o_o_c)
     );
 
     initial begin
         // Iverilog
-        // $dumpfile("tb.vcd");
-        // $dumpvars(0, tb_top);
+        $dumpfile("tb.vcd");
+        $dumpvars(0, tb_top);
 
         // VCS 
-        $vcdplusfile("tb_top.vpd");
-        $vcdpluson;
-        $sdf_annotate("../mapped/top_mapped.sdf", dut);
-        // Prime Time        
-        $dumpfile("tb_top.dump");
-        $dumpvars(0, tb_top);
+        // $vcdplusfile("tb_top.vpd");
+        // $vcdpluson;
+        // $sdf_annotate("../mapped/top_mapped.sdf", dut);
+        // // Prime Time        
+        // $dumpfile("tb_top.dump");
+        // $dumpvars(0, tb_top);
     end
 
     // Testbench initialization
@@ -107,12 +115,12 @@ module tb_top;
         #10;
         i_nrst = 1;
 
-        // // Open output file
-        // output_file = $fopen("output.txt", "w");
-        // if (output_file == 0) begin
-        //     $display("Error opening output file!");
-        //     $finish;
-        // end
+        // Open output file
+        output_file = $fopen("output.txt", "w");
+        if (output_file == 0) begin
+            $display("Error opening output file!");
+            $finish;
+        end
 
         // Write to weight SRAM
         file = $fopen("kernel.txt", "r");
@@ -159,30 +167,30 @@ module tb_top;
             i_write_addr = i_write_addr + 1;
         end
         i_write_en = 0;
-        // Dwise
-        i_conv_mode = 1;
-        i_size = 5;
-        i_c_size = 3;
-        o_c_size = 3;
-        i_c = 0;
-        o_size = 3;
-        stride = 1;
-        p_mode = 0;
+        // // Dwise
+        // i_conv_mode = 1;
+        // i_size = 5;
+        // i_c_size = 3;
+        // o_c_size = 3;
+        // i_c = 0;
+        // o_size = 3;
+        // stride = 1;
+        // p_mode = 0;
 
-        i_i_start_addr = 0;
-        i_i_addr_end = 9;
-        i_w_start_addr = 0;
-        i_w_addr_end = 3;
+        // i_i_start_addr = 0;
+        // i_i_addr_end = 9;
+        // i_w_start_addr = 0;
+        // i_w_addr_end = 3;
     
-        #20;
-        i_route_en = 1;
+        // #20;
+        // i_route_en = 1;
 
-        wait (o_done == 1);
-        i_route_en = 0;
-        #10;
-        i_reg_clear = 1;
-        #10;
-        i_reg_clear = 0;
+        // wait (o_done == 1);
+        // i_route_en = 0;
+        // #10;
+        // i_reg_clear = 1;
+        // #10;
+        // i_reg_clear = 0;
         // Pwise
         i_conv_mode = 0;
         i_route_en = 1;
@@ -213,8 +221,8 @@ module tb_top;
 
     // Monitor and write to output file whenever o_ofmap_valid is high
     always @(posedge i_clk) begin
-        if (o_ofmap_valid) begin
-            $fwrite(output_file, "%h\n", o_ofmap);
+        if (o_word_valid) begin
+            $fwrite(output_file, "%h,%h,%h,%h\n", o_o_x, o_o_y, o_o_c, o_word);
         end
     end
 
