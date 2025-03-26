@@ -49,8 +49,7 @@ module pe #(
     );
 
     logic mac_en;
-    assign mac_en = i_pe_en & (reg_ifmap != 0 & reg_weight != 0);
-
+    assign mac_en = i_pe_en;
     // Multiplier and Accumulator
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if(~i_nrst) begin
@@ -75,8 +74,6 @@ module pe #(
                 reg_psum_out <= i_psum;
             end else if (i_psum_out_en) begin
                 reg_psum_out <= reg_psum;
-            end else begin
-                reg_psum_out <= 0;
             end
         end
     end

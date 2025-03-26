@@ -203,6 +203,9 @@ module ir_controller #(
                         end else begin
                             o_x <= 0;
                             xy_done <= 1;
+                            o_x_e <= o_x;
+                            o_y_e <= o_y;
+                            o_xy_valid <= 1;
                             state <= TILE_COMPARISON;
                         end
                     end

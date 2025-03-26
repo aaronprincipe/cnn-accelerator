@@ -234,7 +234,7 @@ module top #(
         .i_nrst(i_nrst),
         .i_mode(i_p_mode),
         .i_reg_clear(i_reg_clear || s_reg_clear), 
-        .i_pe_en(wr_data_valid || ir_data_valid),
+        .i_pe_en(pe_en),
         .i_psum_out_en(psum_out_en),
         .i_scan_en(s_shift_en),
         .i_ifmap(s_ifmap),

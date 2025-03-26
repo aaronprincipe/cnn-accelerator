@@ -179,6 +179,8 @@ module wr_controller #(
                             o_c <= o_c + 1;
                         end else begin
                             o_c <= 0;
+                            o_c_e <= o_c;
+                            o_c_valid <= 1;
                             c_done <= 1;
                             state <= TILE_COMPARISON;
                         end

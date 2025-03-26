@@ -93,6 +93,9 @@ module output_router #(
             o_o_x <= 0;
             o_o_y <= 0;
             o_o_c <= 0;
+            o_addr <= 0;
+            o_data_out <= 0;
+            o_write_mask <= 0;
             o_word_valid <= 0;
         end else begin
             case(state)
@@ -124,7 +127,7 @@ module output_router #(
 
                 READ_IFMAP: begin
                     ifmap <= i_ifmap;
-                    o_shift_en <= 0;
+                    
                     row_id <= 0;
                     o_x <= prev_o_x;
                     o_y <= prev_o_y;
@@ -133,6 +136,7 @@ module output_router #(
                 end
 
                 ADDRESS_GENERATION: begin
+                    o_shift_en <= 0;
                     // offset_nhwc(n, c, h, w) = n * HWC + h * WC + w * C + c
                     if (column_done) begin
                         column_done <= 0;
@@ -197,6 +201,7 @@ module output_router #(
                 end
 
                 SHIFT_STALL: begin
+                    o_shift_en <= 0;
                     state <= READ_IFMAP;
                 end
             endcase

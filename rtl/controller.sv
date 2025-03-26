@@ -159,14 +159,16 @@ module top_controller # (
                     if (i_ir_context_done & i_wr_context_done) begin
                         o_ir_pop_en <= 0;
                         o_wr_pop_en <= 0;
+                        o_pe_en <= 0;
                         state <= COMPUTE;
                     end
+                    o_pe_en <= 1;
                 end
                 
                 // Given row and column, estimate how many cycles it will take to compute
                 COMPUTE: begin
                     if (cntr < ROWS * COLUMNS) begin
-                        o_pe_en <= 1;
+                        // o_pe_en <= 1;
                         cntr <= cntr + 1;
                     end else begin
                         o_pe_en <= 0;
@@ -177,8 +179,9 @@ module top_controller # (
                 end
 
                 OUTPUT_ROUTING: begin
+                     o_psum_out_en <= 0;
                     if (i_or_done) begin
-                        o_psum_out_en <= 0;
+                       
                         o_s_reg_clear <= 1;
                         o_or_en <= 0;
                         state <= IDLE;
