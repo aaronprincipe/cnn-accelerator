@@ -69,6 +69,7 @@ module d_data_selector #(
     );
 
     // Address comparator
+    // ~o_route_done
     always_comb begin
         if (i_en & i_data_valid & ~mpp_empty) begin
             for (int i = 0; i < SPAD_N; i++) begin

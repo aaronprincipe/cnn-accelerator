@@ -117,6 +117,8 @@ module top #(
     logic [ADDR_WIDTH-1:0] c_s, c_e;
     logic c_valid;
 
+    logic s_shift_en;
+
     top_controller #(
         .ROWS(ROWS),
         .COLUMNS(COLUMNS),
@@ -241,7 +243,6 @@ module top #(
         .i_weight(s_weight),
         .o_ofmap(ofmap)
     );
-    logic s_shift_en;
 
     output_router #(
         .SPAD_WIDTH(SPAD_DATA_WIDTH),

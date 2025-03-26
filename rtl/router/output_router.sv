@@ -62,7 +62,11 @@ module output_router #(
     logic [2:0] state;
     logic context_done, column_done;
 
-
+    logic [ADDR_WIDTH-1:0] byte_addr;
+    logic [ADDR_WIDTH-1:0] word_addr;
+    logic [ADDR_WIDTH-1:0] byte_offset;
+    logic [SPAD_WIDTH-1:0] word_data;
+    logic [SPAD_N-1:0] word_mask;
 
     parameter int IDLE = 0;
     parameter int READ_IFMAP = 1;
@@ -235,12 +239,6 @@ module output_router #(
             endcase
         end
     end
-
-    logic [ADDR_WIDTH-1:0] byte_addr;
-    logic [ADDR_WIDTH-1:0] word_addr;
-    logic [ADDR_WIDTH-1:0] byte_offset;
-    logic [SPAD_WIDTH-1:0] word_data;
-    logic [SPAD_N-1:0] word_mask;
 
     always_comb begin
         byte_addr = o_x * i_i_size * i_c_size + o_y * i_c_size + o_c;
