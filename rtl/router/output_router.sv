@@ -54,7 +54,6 @@ module output_router #(
     output logic o_word_valid,
     output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c 
 );
-    logic [0:ROWS-1][DATA_WIDTH-1:0] lower_ifmap;
     logic [0:ROWS-1][DATA_WIDTH*2-1:0] ifmap;
     logic [ADDR_WIDTH-1:0] row_id;
     logic [ADDR_WIDTH-1:0] o_x, o_y, o_c;
@@ -62,6 +61,8 @@ module output_router #(
     logic [ADDR_WIDTH-1:0] prev_o_x, prev_o_y;
     logic [2:0] state;
     logic context_done, column_done;
+
+
 
     parameter int IDLE = 0;
     parameter int READ_IFMAP = 1;
@@ -73,30 +74,57 @@ module output_router #(
     // Do quantization
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if(~i_nrst) begin
+            ifmap <= 0;
+            row_id <= 0;
             o_x <= 0;
             o_y <= 0;
             o_c <= 0;
             o_x_lim <= 0;
             o_y_lim <= 0;
             o_c_lim <= 0;
+            prev_o_x <= 0;
+            prev_o_y <= 0;
             context_done <= 0;
             column_done <= 0;
-            row_id <= 0;
-
-            ifmap <= 0;
             o_shift_en <= 0;
             o_psum_out_en <= 0;
-            o_done <= 0;
-            o_valid <= 0;
-            state <= IDLE;
-            o_word <= 0;
-            o_o_x <= 0;
-            o_o_y <= 0;
-            o_o_c <= 0;
             o_addr <= 0;
             o_data_out <= 0;
             o_write_mask <= 0;
+            o_valid <= 0;
+            o_done <= 0;
+            o_word <= 0;
             o_word_valid <= 0;
+            o_o_x <= 0;
+            o_o_y <= 0;
+            o_o_c <= 0;
+            state <= IDLE;
+        end else if (i_reg_clear) begin
+            ifmap <= 0;
+            row_id <= 0;
+            o_x <= 0;
+            o_y <= 0;
+            o_c <= 0;
+            o_x_lim <= 0;
+            o_y_lim <= 0;
+            o_c_lim <= 0;
+            prev_o_x <= 0;
+            prev_o_y <= 0;
+            context_done <= 0;
+            column_done <= 0;
+            o_shift_en <= 0;
+            o_psum_out_en <= 0;
+            o_addr <= 0;
+            o_data_out <= 0;
+            o_write_mask <= 0;
+            o_valid <= 0;
+            o_done <= 0;
+            o_word <= 0;
+            o_word_valid <= 0;
+            o_o_x <= 0;
+            o_o_y <= 0;
+            o_o_c <= 0;
+            state <= IDLE;
         end else begin
             case(state)
                 IDLE: begin
