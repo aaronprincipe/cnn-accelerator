@@ -76,7 +76,9 @@ module input_router #(
 
     spad #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(SPAD_DATA_WIDTH)
+        .SPAD_WIDTH(SPAD_DATA_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
+        .SPAD_N(SPAD_N)
     ) ir_spad (
         .i_clk(i_clk),
         .i_nrst(i_nrst),

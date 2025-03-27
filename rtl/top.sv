@@ -50,7 +50,7 @@ module top #(
     // For temp verification
     output logic [DATA_WIDTH*2-1:0] o_word,
     output logic o_word_valid,
-    output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c 
+    output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c,
 
     input logic [ADDR_WIDTH-1:0] i_or_addr,
     input logic i_or_read_en,
@@ -124,6 +124,11 @@ module top #(
     logic c_valid;
 
     logic s_shift_en;
+
+    logic [ADDR_WIDTH-1:0] or_addr;
+    logic [SPAD_DATA_WIDTH-1:0] or_data_out;;
+    logic [SPAD_N-1:0] or_write_mask;
+    logic or_valid;;
 
     top_controller #(
         .ROWS(ROWS),
@@ -277,7 +282,7 @@ module top #(
         .i_c_valid(c_valid),
         .o_addr(or_addr),
         .o_data_out(or_data_out),
-        .o_write_mask(o_write_mask),
+        .o_write_mask(or_write_mask),
         .o_valid(or_valid),
         .o_done(or_done),
         .o_word(o_word),
@@ -287,14 +292,11 @@ module top #(
         .o_o_c(o_o_c)
     );
 
-    logic [ADDR_WIDTH-1:0] or_addr;
-    logic [SPAD_DATA_WIDTH-1:0] or_data_out;;
-    logic [SPAD_N-1:0] or_write_mask;
-    logic or_valid;;
-
     spad #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(SPAD_DATA_WIDTH)
+        .SPAD_WIDTH(SPAD_DATA_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
+        .SPAD_N(SPAD_N)
     ) or_spad (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
