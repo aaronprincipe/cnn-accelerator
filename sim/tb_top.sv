@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
-`include "rtl/global.svh"
-`include "sim/tb_top.svh"
+`include "../rtl/global.svh"
+`include "tb_top.svh"
 
 module tb_top;
     localparam int SRAM_DATA_WIDTH = `SPAD_DATA_WIDTH;

@@ -1,5 +1,17 @@
 import numpy as np
 
+def twos_complement_hex(num):
+    if not -128 <= num <= 127:
+        raise ValueError("Input must be in the 8-bit signed range (-128 to 127)")
+
+    if num >= 0:
+        twos_complement = num
+    else:
+        twos_complement = (1 << 8) + num  # Equivalent to 256 + num
+
+    return f"{twos_complement:02X}"
+
+
 def sram_hex_to_txt(array, n, filename):
     if n <= 0:
         print("Group size must be greater than 0.")
@@ -12,7 +24,7 @@ def sram_hex_to_txt(array, n, filename):
                 # Slice the array to get the group
                 group = array[i:i + n]
                 # Reverse the group, convert each element to hex, and join as a single string
-                hex_string = ''.join(f"{x:02x}" for x in reversed(group))
+                hex_string = ''.join(f"{twos_complement_hex(x)}" for x in reversed(group))
                 file.write(hex_string + '\n')
         
         print(f"Data successfully written to {filename}")
