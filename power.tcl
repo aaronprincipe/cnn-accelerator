@@ -5,7 +5,7 @@ set target_library /cad/tools/libraries/dwc_logic_in_gf22fdx_sc7p5t_116cpp_base_
 set link_library "* $target_library"
 # Read the synthesized netlist
 read_verilog top_mapped.v
-current_design mapped
+current_design top
 link_design
 # Define simulation environment
 set_units -time ps -resistance kOhm -capacitance fF -voltage V -current mA
