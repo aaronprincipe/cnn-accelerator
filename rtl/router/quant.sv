@@ -5,7 +5,8 @@ module quant #(
     input  logic [  DATA_WIDTH-1:0] i_sh,
     input  logic [2*DATA_WIDTH-1:0] i_m0,
     input  logic [2*DATA_WIDTH-1:0] i_act,
-    output logic [  DATA_WIDTH-1:0] o_act
+    output logic [  DATA_WIDTH-1:0] o_act,
+    output logic o_valid
 );
     logic [  DATA_WIDTH-1:0] sh;
     logic [2*DATA_WIDTH-1:0] m0;
@@ -17,6 +18,7 @@ module quant #(
             sh  <= 0;
             m0  <= 0;
             act <= 0;
+            o_valid <= 0;
         end else begin
             if (i_store_reg) begin
                 sh <= i_sh;
@@ -24,8 +26,10 @@ module quant #(
             end
             if (i_en) begin
                 act <= i_act;
+                o_valid <= 1;
             end else begin
                 act <= 0;
+                o_valid <= 0;
             end
         end
     end

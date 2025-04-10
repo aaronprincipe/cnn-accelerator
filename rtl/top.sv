@@ -48,7 +48,7 @@ module top #(
     output logic o_done,
 
     // For temp verification
-    output logic [DATA_WIDTH*2-1:0] o_word,
+    output logic [DATA_WIDTH-1:0] o_word,
     output logic o_word_valid,
     output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c,
 
@@ -131,6 +131,9 @@ module top #(
     logic or_valid;
 
     logic [ADDR_WIDTH-1:0] xy_length;
+
+    logic [  DATA_WIDTH-1:0] quant_sh = {8'h05};
+    logic [2*DATA_WIDTH-1:0] quant_m0 = {16'h9c8c};
 
     top_controller #(
         .ROWS(ROWS),
@@ -284,6 +287,8 @@ module top #(
         .i_c_s(c_s),
         .i_c_e(c_e),
         .i_c_valid(c_valid),
+        .i_quant_sh(quant_sh),
+        .i_quant_m0(quant_m0),
         .o_addr(or_addr),
         .o_data_out(or_data_out),
         .o_write_mask(or_write_mask),

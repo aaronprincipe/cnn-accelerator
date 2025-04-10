@@ -48,10 +48,19 @@ def poinwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW):
                         # Calculate the dot product
                         result = 0
                         for i in range(len(ifmap[h][w])):
-                            result += ifmap[h][w][i] * kernel[c][i]
+                            input_val = to_precision(ifmap[h][w][i],8)
+                            kernel_val= to_precision(kernel[c][i],8)
+                            result += input_val*kernel_val
+                        
+                        quant = (to_precision(result,16,signed=False) * 40076)>>(16+5)
+                        
+                        f.write(f"{quant if quant < 256 else 255}\n")
 
-                        # f.write(f"{h} {w} {c} {result}\n")
-                        f.write(f"{result}\n")
+def to_precision(num,bits,signed=True):
+    n = num & ((1<<bits)-1)
+    if (n & 1<<(bits-1)) and signed:
+        n = n - (1<<(bits))
+    return n
 
 def flatten_3d_array(arr):
     return [item for row in arr for col in row for item in col]
@@ -141,7 +150,7 @@ def main():
     # Already in NHWC format
     kernel = []
     for i in range(output_channels):
-        kernel.append([i] * input_channels)
+        kernel.append([64*(i+1)] * input_channels)
 
     k_flat = flatten_2d_array(kernel)
     i_flat = flatten_3d_array(ifmap)
@@ -174,7 +183,8 @@ def main():
     sram_hex_to_mem(i_flat, spad_n, 'ifmap.mem')
 
     if tb_type == "l":
-        sim_command = "xargs -a filelist.txt iverilog -g2012 -o dsn"
+        # sim_command = "xargs -a filelist.txt iverilog -g2012 -o dsn"
+        sim_command = "iverilog -g2012 -o dsn -f filelist.txt"
         subprocess.run(sim_command, shell=True)
     
         subprocess.run("vvp dsn", shell=True)

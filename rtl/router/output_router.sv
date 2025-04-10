@@ -44,8 +44,8 @@ module output_router #(
     input logic i_c_valid,
 
     // quant
-    input logic [0:ROWS-1][  DATA_WIDTH-1:0] i_quant_sh,
-    input logic [0:ROWS-1][2*DATA_WIDTH-1:0] i_quant_m0,
+    input logic [  DATA_WIDTH-1:0] i_quant_sh,
+    input logic [2*DATA_WIDTH-1:0] i_quant_m0,
 
     // Write to SPAD
     output logic [ADDR_WIDTH-1:0] o_addr,
@@ -55,7 +55,7 @@ module output_router #(
     output logic o_done,
 
     // For temp verification
-    output logic [DATA_WIDTH*2-1:0] o_word,
+    output logic [DATA_WIDTH-1:0] o_word,
     output logic o_word_valid,
     output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c 
 );
@@ -76,10 +76,10 @@ module output_router #(
 
     logic                              quant_en;
     logic                              quant_store_reg;
-    logic [0:ROWS-1][  DATA_WIDTH-1:0] quant_oact;
+    logic [DATA_WIDTH*2-1:0] quant_i_act;
+    logic [DATA_WIDTH-1:0] quant_o_act;
 
-    top_quant #(    
-        .ROWS(ROWS),
+    quant #(    
         .DATA_WIDTH(DATA_WIDTH)
     ) uut (
         .i_clk(i_clk),
@@ -88,8 +88,9 @@ module output_router #(
         .i_store_reg(quant_store_reg),
         .i_sh(i_quant_sh),
         .i_m0(i_quant_m0),
-        .i_act(i_ifmap),
-        .o_act(quant_oact)
+        .i_act(quant_i_act),
+        .o_act(quant_o_act),
+        .o_valid(quant_valid)
     );
 
     parameter int IDLE = 0;
@@ -164,9 +165,6 @@ module output_router #(
         end else begin
             case(state)
                 IDLE: begin
-                    quant_en <= 0;
-                    quant_store_reg <= 0;
-
                     // o_done <= 0;
                     context_done <= 0;
                     column_done <= 0;
@@ -193,10 +191,9 @@ module output_router #(
                 end
 
                 READ_IFMAP: begin
-                    quant_en <= 1;
-                    quant_store_reg <= 1;
 
-                    ifmap <= quant_oact;
+                    quant_store_reg <= 1;
+                    ifmap <= i_ifmap;
                     
                     row_id <= 0;
                     o_x <= prev_o_x;
@@ -221,18 +218,24 @@ module output_router #(
                         o_o_c <= 0;
                         o_word_valid <= 0;
                     end else begin
-                        o_addr <= word_addr;
-                        o_write_mask <= word_mask;
-                        o_valid <= 1;
-                        // This should be in 8-bits
-                        o_data_out <= ifmap[row_id] << byte_offset * SPAD_N;
-                        row_id <= row_id + 1;
-                        state <= XY_INCREMENT;
-                        o_word <= ifmap[row_id];
-                        o_o_x <= o_x;
-                        o_o_y <= o_y;
-                        o_o_c <= o_c;
-                        o_word_valid <= 1;
+                        if (!quant_valid) begin
+                            quant_en <= 1;
+                            quant_i_act <= ifmap[row_id];
+                        end else begin
+                            quant_en <= 0;
+                            o_addr <= word_addr;
+                            o_write_mask <= word_mask;
+                            o_valid <= 1;
+                            // This should be in 8-bits
+                            o_data_out <= quant_o_act << byte_offset * SPAD_N;
+                            row_id <= row_id + 1;
+                            state <= XY_INCREMENT;
+                            o_word <= quant_o_act;
+                            o_o_x <= o_x;
+                            o_o_y <= o_y;
+                            o_o_c <= o_c;
+                            o_word_valid <= 1;
+                        end
                     end
                 end
 
