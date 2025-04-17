@@ -124,6 +124,7 @@ module wr_controller #(
                     if (c_done & i_fifo_route_done) begin
                         o_done <= 1;
                         o_tr_clear <= 1;
+                        o_tr_stall <= 0;
                     end else if (route_en) begin
                         if (o_context_done & ~i_fifo_route_done) begin
                             clear_type <= 1;
@@ -225,8 +226,6 @@ module wr_controller #(
                         o_tr_stall <= 1;
                         o_fifo_clear <= 1;
                         o_cntr_clear <= 1;
-
-
                         state <= IDLE;
                     end else if (i_pop_en) begin
                         o_pop_en <= 1;

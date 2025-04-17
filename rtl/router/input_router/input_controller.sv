@@ -152,6 +152,7 @@ module ir_controller #(
                         o_done <= 1;
                         // Reset Tile Reader
                         o_tr_clear <= 1;
+                        o_tr_stall <= 0;
                     end else if (route_en) begin
                         if (i_conv_mode) begin
                             clear_type <= 0;
