@@ -38,6 +38,7 @@ module wr_controller #(
     output logic o_reg_clear, // Clear everything
     output logic o_fifo_clear, // Clear only FIFO
     output logic o_tr_clear,
+    output logic o_tr_stall,
     output logic o_cntr_clear,
     
     // Status signals
@@ -80,6 +81,7 @@ module wr_controller #(
             o_reg_clear <= 0;
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
+            o_tr_stall <= 0;
             o_ready <= 0;
             o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
@@ -101,6 +103,7 @@ module wr_controller #(
             o_reg_clear <= 0;
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
+            o_tr_stall <= 0;
             o_ready <= 0;
             o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
@@ -120,6 +123,7 @@ module wr_controller #(
                     // If we reset just reuse the weights
                     if (c_done & i_fifo_route_done) begin
                         o_done <= 1;
+                        o_tr_clear <= 1;
                     end else if (route_en) begin
                         if (o_context_done & ~i_fifo_route_done) begin
                             clear_type <= 1;
@@ -134,6 +138,7 @@ module wr_controller #(
                         o_tr_clear <= 0;
                         o_ready <= 0;
                         o_context_done <= 0;
+                        o_tr_stall <= 0;
                         state <= CLEAR;
                     end
                 end
@@ -217,9 +222,11 @@ module wr_controller #(
                         o_pop_en <= 0;
                         o_ready <= 0;
                         o_context_done <= 1;
-                        o_tr_clear <= 1;
+                        o_tr_stall <= 1;
                         o_fifo_clear <= 1;
                         o_cntr_clear <= 1;
+
+
                         state <= IDLE;
                     end else if (i_pop_en) begin
                         o_pop_en <= 1;

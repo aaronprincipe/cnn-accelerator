@@ -6,6 +6,7 @@ module tile_reader #(
     input logic i_nrst, 
     input logic i_en,
     input logic i_reg_clear,
+    input logic i_stall,
 
     // Address Reference
     input logic [ADDR_WIDTH-1:0] i_start_addr,
@@ -38,6 +39,15 @@ module tile_reader #(
                 reg_read_addr <= 0;
                 o_spad_read_done <= 0;
                 o_spad_read_en <= 0;
+            end else if (i_stall) begin
+                    o_spad_read_en <= 0;
+                    reg_counter <= reg_counter;
+                    if (reg_counter - 1 == 0) begin
+                        reg_read_addr <= 0;
+                    end else begin
+                        reg_read_addr <= i_start_addr + reg_counter - 1;
+                    end
+                    o_spad_read_done <= 0;
             end else if (i_en & ~o_spad_read_done) begin
                 if (reg_counter + i_start_addr <= i_addr_end) begin
                     o_spad_read_en <= 1;

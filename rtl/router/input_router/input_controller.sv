@@ -43,6 +43,7 @@ module ir_controller #(
     output logic o_reg_clear, // Clear everything
     output logic o_fifo_clear, // Clear only FIFO
     output logic o_tr_clear,
+    output logic o_tr_stall,
     output logic o_cntr_clear,
     
     // Status signals
@@ -73,6 +74,9 @@ module ir_controller #(
 
     logic clear_type; // 0 - Clear all, 1 - Clear only FIFO
 
+    // Add logic for starting read address of tile reader
+    // Should not go from the start everytime
+
     assign route_en = i_en & i_fifo_empty;
     assign x_increment = o_x < (i_o_size * i_stride) - i_stride;;
     assign y_increment = o_y < (i_o_size * i_stride) - i_stride;;
@@ -89,6 +93,7 @@ module ir_controller #(
             o_reg_clear <= 0;
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
+            o_tr_stall <= 0;
             o_ready <= 0;
             o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
@@ -118,6 +123,7 @@ module ir_controller #(
             o_reg_clear <= 0;
             o_fifo_clear <= 0;
             o_tr_clear <= 0;
+            o_tr_stall <= 0;
             o_ready <= 0;
             o_dl_sw_addr <= 0;
             o_dl_start_addr <= 0;
@@ -144,6 +150,8 @@ module ir_controller #(
                 IDLE: begin
                     if (xy_done & i_fifo_route_done) begin
                         o_done <= 1;
+                        // Reset Tile Reader
+                        o_tr_clear <= 1;
                     end else if (route_en) begin
                         if (i_conv_mode) begin
                             clear_type <= 0;
@@ -159,6 +167,7 @@ module ir_controller #(
                         end
                         o_ready <= 0;
                         o_cntr_clear <= 0;
+                        o_tr_stall <= 0;
                         state <= CLEAR;
                     end
                 end
@@ -252,12 +261,21 @@ module ir_controller #(
                         o_pop_en <= 0;
                         o_ready <= 0;
                         o_context_done <= 1;
-                        o_tr_clear <= 1;
+                       
                         o_fifo_clear <= 1;
                         o_cntr_clear <= 1;
 
                         if (i_fifo_route_done) begin
                             o_tile_done <= 1;
+                        end
+
+                        // Just stop starting address of tile reader
+                        if (i_conv_mode) begin
+                            o_tr_clear <= 1;
+                            o_tr_stall <= 0;
+                        end else begin
+                            o_tr_clear <= 0;
+                            o_tr_stall <= 1;
                         end
 
                         state <= IDLE;
