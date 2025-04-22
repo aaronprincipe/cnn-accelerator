@@ -46,6 +46,9 @@ module input_router #(
     output logic o_xy_valid,
     output logic [ADDR_WIDTH-1:0] o_xy_length,
 
+    // Top level control signals
+    output logic [ADDR_WIDTH-1:0] o_s_r, o_t,
+
     // Status signals
     output logic o_ready,
     output logic o_context_done, // Done with current set of values
@@ -61,7 +64,7 @@ module input_router #(
 
     // Tile Reader related signals
     // Forward this to routers
-    logic [ADDR_WIDTH-1:0] tr_addr;
+    logic [ADDR_WIDTH-1:0] tr_addr, tile_addr;
     logic [SPAD_DATA_WIDTH-1:0] tr_data;
     logic tr_data_valid;
 
@@ -74,6 +77,8 @@ module input_router #(
     logic [ADDR_WIDTH-1:0] dl_start_addr, dl_end_addr;
     logic [COUNT-1:0] dl_id;
     logic dl_addr_write_en;
+
+    logic [ADDR_WIDTH-1:0] slots;
 
     spad #(
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -101,7 +106,7 @@ module input_router #(
         .i_en(route_en),
         .i_reg_clear(reg_clear || tr_clear || i_reg_clear),
         .i_stall(tr_stall),
-        .i_start_addr(i_start_addr),
+        .i_start_addr(tile_addr),
         .i_addr_end(i_addr_end),
         .i_data_in(spad_data_out),
         .i_data_in_valid(spad_data_out_valid),
@@ -155,7 +160,11 @@ module input_router #(
         .o_done(o_done),
         .o_context_done(o_context_done),
         .o_tile_done(o_tile_done),
-        .o_ready(o_ready)
+        .o_ready(o_ready),
+        .o_tile_addr(tile_addr),
+        .o_s_r(o_s_r),
+        .o_t(o_t),
+        .i_slots(slots)
     );
 
     data_lane_array #(
@@ -190,7 +199,8 @@ module input_router #(
         .o_fifo_full(fifo_full),
         .o_fifo_empty(fifo_empty),
         .o_route_done(fifo_route_done),
-        .o_idle(fifo_idle)
+        .o_idle(fifo_idle),
+        .o_slots(slots)
     );
 
 endmodule

@@ -26,6 +26,7 @@ module ir_controller #(
     input logic [ADDR_WIDTH-1:0] i_start_addr,
 
     // Data lane address assignment
+    input logic [ADDR_WIDTH-1:0] i_slots,
     output logic [0:KERNEL_LENGTH-1][ADDR_WIDTH-1:0] o_dl_sw_addr,
     output logic [ADDR_WIDTH-1:0] o_dl_start_addr,
     output logic [ADDR_WIDTH-1:0] o_dl_end_addr,
@@ -55,7 +56,12 @@ module ir_controller #(
     output logic o_context_done,
     output logic o_tile_done,
     output logic o_ready,
-    output logic [2:0] o_state
+    output logic [2:0] o_state,
+    output logic [ADDR_WIDTH-1:0] o_tile_addr,
+
+    // To top level control
+    output logic [ADDR_WIDTH-1:0] o_s_r,
+    output logic [ADDR_WIDTH-1:0] o_t
 );
     parameter int IDLE = 0;
     parameter int CLEAR = 1;
@@ -69,7 +75,8 @@ module ir_controller #(
     assign o_state = state;
     logic route_en;
     logic wr_o_reset;
-    logic [ADDR_WIDTH-1:0] o_x, o_y, prev_addr;
+    logic first_row;
+    logic [ADDR_WIDTH-1:0] o_x, o_y, prev_addr, tile_addr;
     logic y_increment, x_increment, xy_increment, xy_done;
 
     logic clear_type; // 0 - Clear all, 1 - Clear only FIFO
@@ -114,6 +121,9 @@ module ir_controller #(
             o_xy_valid <= 0;
             o_xy_length <= 0;
 
+            first_row <= 0;
+            o_s_r <= 0;
+            o_t <= 0;
             state <= IDLE;
         end else if (i_reg_clear) begin
             o_route_en <= 0;
@@ -144,6 +154,9 @@ module ir_controller #(
             o_xy_valid <= 0;
             o_xy_length <= 0;
 
+            first_row <= 0;
+            o_s_r <= 0;
+            o_t <= 0;
             state <= IDLE;
         end else begin
             case (state)
@@ -202,6 +215,11 @@ module ir_controller #(
                     end
                     o_dl_addr_write_en <= 1;
                     state <= XY_INCREMENT;
+
+                    if (!first_row) begin
+                        first_row <= 1;
+                        tile_addr <= (prev_addr + (i_start_addr * SPAD_N)) >> $clog2(SPAD_N);
+                    end
                 end
 
                 // This maps the Height and Width of ifmap to Systolic Array
@@ -233,6 +251,7 @@ module ir_controller #(
                         end
                         o_xy_length <= o_dl_id;
                         o_xy_valid <= 1;
+                        o_s_r <= o_dl_id;
                         state <= TILE_COMPARISON;
                     end else if (xy_increment) begin
                         o_dl_id <= o_dl_id + 1;
@@ -241,6 +260,7 @@ module ir_controller #(
                 end
 
                 TILE_COMPARISON: begin
+                    first_row <= 0;
                     o_xy_valid <= 0;
                     o_y_s <= 0;
                     o_x_s <= 0;
@@ -251,6 +271,7 @@ module ir_controller #(
                     if (i_fifo_route_done || i_fifo_full || i_fifo_idle) begin
                         o_route_en <= 0;
                         o_ready <= 1;
+                        o_t <= i_slots;
                         state <= DATA_OUT;
                     end else begin
                         o_route_en <= 1;
@@ -270,14 +291,8 @@ module ir_controller #(
                             o_tile_done <= 1;
                         end
 
-                        // Just stop starting address of tile reader
-                        if (i_conv_mode) begin
-                            o_tr_clear <= 1;
-                            o_tr_stall <= 0;
-                        end else begin
-                            o_tr_clear <= 0;
-                            o_tr_stall <= 1;
-                        end
+                        o_tr_clear <= 1;
+
 
                         state <= IDLE;
                     end else if (i_pop_en) begin
@@ -311,4 +326,5 @@ module ir_controller #(
         end
     endgenerate
 
+    assign o_tile_addr = tile_addr;
 endmodule

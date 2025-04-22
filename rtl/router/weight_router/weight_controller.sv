@@ -49,7 +49,9 @@ module wr_controller #(
     output logic o_done,
     output logic o_context_done,
     output logic o_ready,
-    output logic [2:0] o_state
+    output logic [2:0] o_state,
+    output logic [ADDR_WIDTH-1:0] o_tile_addr,
+    output logic [ADDR_WIDTH-1:0] o_s_c
 );
     parameter int IDLE = 0;
     parameter int CLEAR = 1;
@@ -61,6 +63,8 @@ module wr_controller #(
     logic [2:0] state;
     assign o_state = state;
     logic route_en;
+
+    logic first_col;
 
     logic [ADDR_WIDTH-1:0] o_c;
     logic c_increment, c_done;
@@ -95,6 +99,9 @@ module wr_controller #(
             o_c_e <= 0;
             o_c_valid <= 0;
             state <= IDLE;
+            first_col <= 0;
+            o_s_c <= 0;
+            o_tile_addr <= 0;
         end else if (i_reg_clear) begin
             o_route_en <= 0;
             o_context_done <= 0;
@@ -117,6 +124,9 @@ module wr_controller #(
             o_c_e <= 0;
             o_c_valid <= 0;
             state <= IDLE;
+            first_col <= 0;
+            o_s_c <= 0;
+            o_tile_addr <= 0;
         end else begin
             case (state)
                 IDLE: begin
@@ -163,11 +173,16 @@ module wr_controller #(
                     end else begin
                         // Pwise
                         o_dl_end_addr <= (i_start_addr * SPAD_N) + (o_c + 1) * i_i_c_size;
-                        o_dl_start_addr <= (i_start_addr * SPAD_N) + o_c * i_i_c_size;;
+                        o_dl_start_addr <= (i_start_addr * SPAD_N) + o_c * i_i_c_size;
                     end
 
                     o_dl_addr_write_en <= 1;
                     state <= C_INCREMENT;
+
+                    if (!first_col) begin
+                        first_col <= 1;
+                        o_tile_addr <= ((i_start_addr * SPAD_N) + o_c * i_i_c_size) >> $clog2(SPAD_N);
+                    end
                 end
 
                 C_INCREMENT: begin
@@ -195,6 +210,7 @@ module wr_controller #(
                             o_dl_id <= 0;
                             o_c_e <= o_c;
                             o_c_valid <= 1;
+                            o_s_c <= o_dl_id;
                             state <= TILE_COMPARISON;
                         end else if (c_increment) begin
                             o_dl_id <= o_dl_id + 1;
@@ -223,7 +239,7 @@ module wr_controller #(
                         o_pop_en <= 0;
                         o_ready <= 0;
                         o_context_done <= 1;
-                        o_tr_stall <= 1;
+                        o_tr_clear <= 1;
                         o_fifo_clear <= 1;
                         o_cntr_clear <= 1;
                         state <= IDLE;

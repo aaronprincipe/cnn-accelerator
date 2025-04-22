@@ -43,6 +43,7 @@ module weight_router #(
     // Output router signals
     output logic [ADDR_WIDTH-1:0] o_c_s, o_c_e,
     output logic o_c_valid,
+    output logic [ADDR_WIDTH-1:0] o_s_c,
 
     // Status signals
     output logic o_ready,
@@ -58,7 +59,7 @@ module weight_router #(
 
     // Tile Reader related signals
     // Forward this to routers
-    logic [ADDR_WIDTH-1:0] tr_addr;
+    logic [ADDR_WIDTH-1:0] tr_addr, tile_addr;
     logic [SPAD_DATA_WIDTH-1:0] tr_data;
     logic tr_data_valid;
 
@@ -98,7 +99,7 @@ module weight_router #(
         .i_en(route_en),
         .i_reg_clear(reg_clear || tr_clear || i_reg_clear),
         .i_stall(tr_stall),
-        .i_start_addr(i_start_addr),
+        .i_start_addr(tile_addr),
         .i_addr_end(i_addr_end),
         .i_data_in(spad_data_out),
         .i_data_in_valid(spad_data_out_valid),
@@ -147,7 +148,9 @@ module weight_router #(
         .o_c_valid(o_c_valid),
         .o_done(o_done),
         .o_context_done(o_context_done),
-        .o_ready(o_ready)
+        .o_ready(o_ready),
+        .o_tile_addr(tile_addr),
+        .o_s_c(o_s_c)
     );
 
     data_lane_array #(

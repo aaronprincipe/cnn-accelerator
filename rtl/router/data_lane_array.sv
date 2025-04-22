@@ -32,6 +32,7 @@ module data_lane_array #(
     input i_miso_pop_en,
     input logic [1:0] i_p_mode,
     output logic [COUNT-1:0][DATA_WIDTH-1:0] o_data,
+    output logic [ADDR_WIDTH-1:0] o_slots,
 
     // Status signals
     output logic [COUNT-1:0] o_data_valid,
@@ -42,6 +43,7 @@ module data_lane_array #(
 );
     logic [COUNT-1:0] counter, rr_pop_en;
     logic [COUNT-1:0] rr_data_empty, rr_data_valid, rr_miso_full, rr_route_done, rr_idle;
+    logic [COUNT-1:0][ADDR_WIDTH-1:0] rr_slots;
 
     // Stalled popping logic
     always_ff @ (posedge i_clk or negedge i_nrst) begin
@@ -101,7 +103,8 @@ module data_lane_array #(
                 .o_miso_full(rr_miso_full[ii]),
                 .o_route_done(rr_route_done[ii]),
                 .o_idle(rr_idle[ii]),
-                .o_valid(rr_data_valid[ii])
+                .o_valid(rr_data_valid[ii]),
+                .o_slots(rr_slots[ii])
             );
         end
     endgenerate
@@ -112,6 +115,7 @@ module data_lane_array #(
         o_data_valid = rr_data_valid;
         o_route_done = &rr_route_done;
         o_idle = &rr_idle;
+        o_slots = rr_slots[0];
     end
 
 endmodule

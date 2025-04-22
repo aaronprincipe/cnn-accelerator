@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
-`include "../rtl/global.svh"
-`include "tb_top.svh"
+`include "rtl/global.svh"
+`include "sim/tb_top.svh"
 
 module tb_top;
     localparam int SRAM_DATA_WIDTH = `SPAD_DATA_WIDTH;
@@ -27,7 +27,7 @@ module tb_top;
     logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c;
 
     logic [DATA_WIDTH*2-1:0] o_ofmap;
-    logic o_ofmap_valid, o_done;
+    logic o_ofmap_valid, o_done, o_or_en;
 
     logic i_spad_select;
 
@@ -63,21 +63,22 @@ module tb_top;
         .o_word_valid(o_word_valid),
         .o_o_x(o_o_x),
         .o_o_y(o_o_y),
-        .o_o_c(o_o_c)
+        .o_o_c(o_o_c),
+        .o_or_en(o_or_en)
     );
 
     initial begin
         // Iverilog
-        // $dumpfile("tb.vcd");
-        // $dumpvars(0, tb_top);
+        $dumpfile("tb.vcd");
+        $dumpvars(0, tb_top);
 
         // VCS 
-        $vcdplusfile("tb_top.vpd");
-        $vcdpluson;
-        $sdf_annotate("../mapped/top_mapped.sdf", dut);
-        // Prime Time        
-        $dumpfile("top.dump");
-        $dumpvars(0, tb_top);
+        // $vcdplusfile("tb_top.vpd");
+        // $vcdpluson;
+        // $sdf_annotate("../mapped/top_mapped.sdf", dut);
+        // // Prime Time        
+        // $dumpfile("top.dump");
+        // $dumpvars(0, tb_top);
     end
 
     // Testbench initialization
@@ -107,14 +108,14 @@ module tb_top;
         i_nrst = 1;
 
         // Open output file
-        output_file = $fopen("output.txt", "w");
+        output_file = $fopen("sim/output.txt", "w");
         if (output_file == 0) begin
             $display("Error opening output file!");
             $finish;
         end
 
         // Write to weight SRAM
-        file = $fopen("weights.txt", "r");
+        file = $fopen("sim/weights.txt", "r");
         if (file == 0) begin
             $display("Error opening file 1");
             $finish;
@@ -139,7 +140,7 @@ module tb_top;
         $fclose(file);
 
         // Write to input SRAM
-        file = $fopen("inputs.txt", "r");
+        file = $fopen("sim/inputs.txt", "r");
         if (file == 0) begin
             $display("Error opening file 2");
             $finish;
@@ -164,11 +165,14 @@ module tb_top;
         @(posedge i_clk); // wait for one clock cycle
         i_route_en = 1;
 
-        wait (o_done == 1); // wait for i_route_en to be high
-        $finish;
+        // wait (o_done == 1); // wait for i_route_en to be high
+        // $finish;
         while(i_route_en == 1) begin // while SIG = "1"
             @(posedge i_clk); // when clock signal gets high
-            counter++; // increase counter by 1
+            if (o_or_en == 0) begin
+                counter++; // increase counter by 1
+            end
+            
         end
     end
 

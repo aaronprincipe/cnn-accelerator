@@ -55,7 +55,8 @@ module top #(
     input logic [ADDR_WIDTH-1:0] i_or_addr,
     input logic i_or_read_en,
     output logic [SPAD_DATA_WIDTH-1:0] o_or_data_out,
-    output logic o_or_data_out_valid
+    output logic o_or_data_out_valid,
+    output logic o_or_en
 
 );
     logic spad_w_write_en, spad_i_write_en;
@@ -135,6 +136,8 @@ module top #(
     logic [  DATA_WIDTH-1:0] quant_sh = {8'h05};
     logic [2*DATA_WIDTH-1:0] quant_m0 = {16'h9c8c};
 
+    logic [ADDR_WIDTH-1:0] s_r, s_c, s_t;
+
     top_controller #(
         .ROWS(ROWS),
         .COLUMNS(COLUMNS),
@@ -164,7 +167,10 @@ module top #(
         .i_ir_done(ir_done),
         .i_wr_done(wr_done),
         .i_or_done(or_done),
-        .o_done(o_done)
+        .o_done(o_done),
+        .i_s_r(s_r),
+        .i_s_c(s_c),
+        .i_t(s_t)
     );
 
     input_router #(
@@ -205,7 +211,9 @@ module top #(
         .o_ready(ir_ready),
         .o_context_done(ir_context_done),
         .o_done(ir_done),
-        .o_tile_done(ir_tile_done)
+        .o_tile_done(ir_tile_done),
+        .o_s_r(s_r),
+        .o_t(s_t)
     );
 
     weight_router #(
@@ -241,7 +249,8 @@ module top #(
         .o_c_valid(c_valid),
         .o_ready(wr_ready),
         .o_context_done(wr_context_done),
-        .o_done(wr_done)
+        .o_done(wr_done),
+        .o_s_c(s_c)
     );
 
     systolic_array #(
@@ -319,4 +328,5 @@ module top #(
         .o_data_out_valid(o_or_data_out_valid)
     );
 
+    assign o_or_en = or_en;
 endmodule

@@ -50,6 +50,9 @@ module top_controller # (
 
     // Dimensions
     output logic [ADDR_WIDTH-1:0] o_o_c,
+    input logic [ADDR_WIDTH-1:0] i_s_r,
+    input logic [ADDR_WIDTH-1:0] i_s_c,
+    input logic [ADDR_WIDTH-1:0] i_t,
 
     // Finished computing
     input logic i_ir_done,
@@ -167,7 +170,13 @@ module top_controller # (
                 
                 // Given row and column, estimate how many cycles it will take to compute
                 COMPUTE: begin
-                    if (cntr < ROWS * COLUMNS) begin
+                    /*
+                        Number of cycles to compute = 2X+Y+Cin-2
+                        where Y is from the input router
+                        and X is from the weight router
+                        and Cin is the number of elements in the FIFO
+                    */
+                    if (cntr < (2*i_s_r + i_s_c - 2)) begin
                         // o_pe_en <= 1;
                         cntr <= cntr + 1;
                     end else begin
@@ -179,9 +188,8 @@ module top_controller # (
                 end
 
                 OUTPUT_ROUTING: begin
-                     o_psum_out_en <= 0;
+                    o_psum_out_en <= 0;
                     if (i_or_done) begin
-                       
                         o_s_reg_clear <= 1;
                         o_or_en <= 0;
                         state <= IDLE;

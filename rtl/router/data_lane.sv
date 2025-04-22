@@ -39,7 +39,8 @@ module data_lane #(
     output logic o_miso_full,
     output logic o_route_done,
     output logic o_idle,
-    output logic o_valid
+    output logic o_valid,
+    output logic [ADDR_WIDTH-1:0] o_slots
 );
     // Reformat address from 2D to 1D
     logic [0:SPAD_N-1][ADDR_WIDTH-1:0] spad_addr;
@@ -168,5 +169,6 @@ module data_lane #(
         o_miso_full = miso_full;
         o_route_done = route_done;
         o_idle = miso_full || route_done;
+        o_slots = slots;
     end
 endmodule
