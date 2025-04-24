@@ -217,7 +217,7 @@ module tb_top;
     end
 
     always @(posedge i_clk) begin
-        if (re_route_flag) begin
+        if (re_route_flag & i_reg_clear & o_done) begin
             i_c <= i_c + 1;
             i_reg_clear <= 0;
             i_route_en <= 1;
@@ -234,7 +234,7 @@ module tb_top;
     // // Terminate simulation when o_done is high
     always @(posedge i_clk) begin
         if (o_done) begin
-            $display("Channel %d simulation completed: o_done asserted.", i_c);
+            $display("Channel %0d simulation completed: o_done asserted.", i_c);
             $display("Total cycles so far: %d", counter);
 
             if (i_c < i_c_size - 1) begin
