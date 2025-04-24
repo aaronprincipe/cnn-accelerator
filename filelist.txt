@@ -19,3 +19,4 @@
 ../rtl/systolic_array/pe.sv
 ../rtl/systolic_array/systolic_array.sv
 ../rtl/global.svh
+tb_top.sv
