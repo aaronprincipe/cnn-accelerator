@@ -197,7 +197,6 @@ module tb_top;
         while(i_route_en == 1) begin // while SIG = "1"
             @(posedge i_clk); // when clock signal gets high
             counter++; // increase counter by 1
-            $display("Cycle: %d", counter);
             if (o_or_en == 0) begin
                 no_or_counter++;
             end

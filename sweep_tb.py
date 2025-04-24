@@ -87,7 +87,7 @@ def generate_simv_command(
         f"+LAYER_IDENTIFIER={layer_identifier} "
         f'+INPUT_FILE="{input_file}" '
         f'+WEIGHT_FILE="{weight_file}" '
-        f'+CYCLE_FILE="{cycle_file}"'
+        f'+CYCLE_FILE="{cycle_file} "'
         f'+OUTPUT_FILE="{output_file}"'
     )
     return cmd
@@ -121,15 +121,16 @@ def main():
                     stride = row['Stride']
                     type = row['Type']
                     
+                    # 0 for Pointwise and 1 for Depthwise
                     conv_mode = 0 if type == "P" else 1
 
-                    if identifier == "1":
-                        out_size = h if type == "P" else h - 2
+                    if conv_mode == 1:
+                        out_size = h if type == "P" else ((h-3) // stride) + 1
                         i_filename = f"vww/{spad_data_width}_bits/inputs/{identifier}.txt"
                         w_filename = f"vww/{spad_data_width}_bits/weights/{identifier}.txt"
                         o_filename = f"{d}_{d}_{d}_{spad_data_width}_output.txt"
 
-                        for precision in [2]:
+                        for precision in [2, 4, 8]:
                             cycle_file = f"{precision}b_{d}_{d}_{d}_{spad_data_width}_cycle.txt"
                             tb_cmd = generate_simv_command(
                                 conv_mode,
@@ -145,6 +146,7 @@ def main():
                                 cycle_file,
                                 o_filename
                             )
+                            
                             print(f"Processing {identifier} with {precision}-bit precision and dimensions {h}x{w}x{c_i} and SPAD data width {spad_data_width}\n")
                             subprocess.run(tb_cmd, shell=True)
 

@@ -40,7 +40,7 @@ module tile_reader #(
                 o_spad_read_done <= 0;
                 o_spad_read_en <= 0;
             end else if (i_en & ~o_spad_read_done) begin
-                if (reg_read_addr <= i_addr_end) begin
+                if (reg_read_addr < i_addr_end) begin
                     o_spad_read_en <= 1;
                     reg_read_addr <= i_start_addr + reg_counter;
                     reg_counter <= reg_counter + 1;
@@ -61,7 +61,7 @@ module tile_reader #(
             if (i_reg_clear) begin
                 reg_prev_read_addr <= 0;
             end else if (i_en & ~o_spad_read_done) begin
-                if (reg_read_addr <= i_addr_end + 1) begin
+                if (reg_read_addr < i_addr_end + 1) begin
                     reg_prev_read_addr <= reg_read_addr;
                 end
             end
