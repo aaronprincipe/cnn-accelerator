@@ -8,6 +8,7 @@ module tb_top;
 
     int counter = 0; // counter initialization
     int no_or_counter = 0;
+    int write_spad_counter = 0;
 
     // File-related variables
     integer file, r, output_file;
@@ -20,7 +21,7 @@ module tb_top;
     logic [SRAM_DATA_WIDTH-1:0] mem_data;
 
     // Signals
-    logic i_clk, i_nrst, i_reg_clear, i_write_en, i_route_en;
+    logic i_clk, i_nrst, i_reg_clear, i_write_en, i_route_en, re_route_flag;
     logic i_conv_mode;
     logic [1:0] p_mode;
     logic [SRAM_DATA_WIDTH-1:0] i_data_in;
@@ -125,6 +126,7 @@ module tb_top;
         i_stride = stride;
         p_mode = precision;
 
+        write_spad_counter = 0;
         #10;
         i_nrst = 1;
 
@@ -191,16 +193,6 @@ module tb_top;
 
         @(posedge i_clk); // wait for one clock cycle
         i_route_en = 1;
-
-        // wait (o_done == 1); // wait for i_route_en to be high
-        // $finish;
-        while(i_route_en == 1) begin // while SIG = "1"
-            @(posedge i_clk); // when clock signal gets high
-            counter++; // increase counter by 1
-            if (o_or_en == 0) begin
-                no_or_counter++;
-            end
-        end
     end
 
     // Monitor and write to output file whenever o_ofmap_valid is high
@@ -211,16 +203,50 @@ module tb_top;
         end
     end
 
+    always @(posedge i_clk) begin
+        if (i_write_en == 1) begin
+            write_spad_counter++;
+        end
+    end
+
+    always @(posedge i_clk) begin
+        if (i_route_en) begin
+            counter++;
+            if (!o_or_en) no_or_counter++;
+        end
+    end
+
+    always @(posedge i_clk) begin
+        if (re_route_flag) begin
+            i_c <= i_c + 1;
+            i_reg_clear <= 0;
+            i_route_en <= 1;
+        end
+    end
+
+    // Add this to turn it off immediately in the next clock
+    always @(posedge i_clk) begin
+        if (re_route_flag) begin
+            re_route_flag <= 0;
+        end
+    end
+
     // // Terminate simulation when o_done is high
     always @(posedge i_clk) begin
         if (o_done) begin
-            $display("Simulation completed: o_done asserted.");
-            $display("Total cycles: %d", counter);
-            $fwrite(cycle_stats, "%0d, %0d, %0d\n", layer_identifier, counter, no_or_counter);
-            // $fwrite(cycle_stats, "%0d, %0d, %0d, %0d, %0d, %0d, %0d\n", `LAYER_IDENTIFIER, `SPAD_N, `ADDR_WIDTH, `ROWS, `COLUMNS, `MISO_DEPTH, counter);
-            $fclose(cycle_stats);
-            $fclose(output_file);
-            $finish;
+            $display("Channel %d simulation completed: o_done asserted.", i_c);
+            $display("Total cycles so far: %d", counter);
+
+            if (i_c < i_c_size - 1) begin
+                i_route_en <= 0;
+                i_reg_clear <= 1;
+                re_route_flag <= 1;  // Set flag to re-enable routing in next cycle
+            end else begin
+                $fwrite(cycle_stats, "%0d, %0d, %0d, %0d\n", layer_identifier, counter, no_or_counter, write_spad_counter);
+                $fclose(cycle_stats);
+                $fclose(output_file);
+                $finish;
+            end
         end
     end
 endmodule
