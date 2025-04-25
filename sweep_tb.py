@@ -118,11 +118,14 @@ def main():
                     w = int(row['H/W'])
                     c_i = int(row['C'])
                     c_o = int(row['Oc'])
-                    stride = row['Stride']
+                    stride = int(row['Stride'])
                     type = row['Type']
                     
                     # 0 for Pointwise and 1 for Depthwise
                     conv_mode = 0 if type == "P" else 1
+
+                    if conv_mode == 0:
+                        continue
                     
                     out_size = h if type == "P" else ((h-3) // stride) + 1
                     i_filename = f"vww/{spad_data_width}_bits/inputs/{identifier}.txt"
