@@ -1,9 +1,9 @@
 
     `define DATA_WIDTH 8
-    `define SPAD_DATA_WIDTH 32
-    `define SPAD_N 4
-    `define ADDR_WIDTH 13
-    `define ROWS 16
-    `define COLUMNS 16
-    `define MISO_DEPTH 16
+    `define SPAD_DATA_WIDTH 64
+    `define SPAD_N 8
+    `define ADDR_WIDTH 12
+    `define ROWS 32
+    `define COLUMNS 32
+    `define MISO_DEPTH 32
     `define MPP_DEPTH 9

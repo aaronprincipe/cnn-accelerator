@@ -209,7 +209,7 @@ module ir_controller #(
                         o_dl_sw_addr <= addr;
                         if (!first_row) begin
                             first_row <= 1;
-                            tile_addr <= ((i_start_addr * SPAD_N) + (o_x) * i_i_size * i_i_c_size + (o_y) * i_i_c_size + i_i_c) >> $clog2(SPAD_N);
+                            tile_addr <= ((i_start_addr * SPAD_N) + ((o_x) * i_i_size + (o_y))) >> $clog2(SPAD_N);
                         end
                     end else begin
                         // Pwise
@@ -317,11 +317,11 @@ module ir_controller #(
                     if (i_conv_mode) begin
                     // offset_nchw(n, c, h, w) = c * HW + h * W + w
                     // Uncomment if using NCHW format
-                    // addr[addr_idx] = i_start_addr + ((i_o_x + x) * i_i_size + (i_o_y + y));
+                    addr[addr_idx] = (i_start_addr * SPAD_N) + ((o_x + x) * i_i_size + (o_y + y));
 
                     // offset_nhwc(n, c, h, w) = h * WC + w * C + c
                     // Uncomment if using NHWC format
-                        addr[addr_idx] = (i_start_addr * SPAD_N) + (o_x + x) * i_i_size * i_i_c_size + (o_y + y) * i_i_c_size + i_i_c;
+                        // addr[addr_idx] = (i_start_addr * SPAD_N) + (o_x + x) * i_i_size * i_i_c_size + (o_y + y) * i_i_c_size + i_i_c;
                     end else begin
                         addr[addr_idx] = '0;
                     end
