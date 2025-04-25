@@ -57,7 +57,9 @@ module top #(
     input logic i_or_read_en,
     output logic [SPAD_DATA_WIDTH-1:0] o_or_data_out,
     output logic o_or_data_out_valid,
-    output logic o_or_en
+    output logic [2:0] o_top_state,
+    output logic o_or_en,
+    output logic o_pe_en
 
 );
     logic spad_w_write_en, spad_i_write_en;
@@ -171,7 +173,8 @@ module top #(
         .o_done(o_done),
         .i_s_r(s_r),
         .i_s_c(s_c),
-        .i_t(s_t)
+        .i_t(s_t),
+        .o_state(o_top_state)
     );
 
     input_router #(
@@ -330,4 +333,5 @@ module top #(
     );
 
     assign o_or_en = or_en;
+    assign o_pe_en = pe_en;
 endmodule

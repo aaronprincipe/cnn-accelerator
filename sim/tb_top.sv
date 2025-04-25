@@ -6,9 +6,14 @@ module tb_top;
     localparam int ADDR_WIDTH = `ADDR_WIDTH;
     localparam int DATA_WIDTH = `DATA_WIDTH;
 
+    // Counters
     int counter = 0; // counter initialization
-    int no_or_counter = 0;
     int write_spad_counter = 0;
+    int activation_routing_counter = 0; // 2
+    int compute_counter = 0; // 3 & 4
+    int output_routing_counter = 0; // 5
+    int no_or_counter = 0;
+    
 
     // File-related variables
     integer file, r, output_file;
@@ -37,6 +42,8 @@ module tb_top;
     logic o_ofmap_valid, o_done, o_or_en;
 
     logic i_spad_select;
+
+    logic [2:0] o_top_state;
 
     // Clock generation
     initial i_clk = 0;
@@ -71,17 +78,18 @@ module tb_top;
         .o_o_x(o_o_x),
         .o_o_y(o_o_y),
         .o_o_c(o_o_c),
-        .o_or_en(o_or_en)
+        .o_or_en(o_or_en),
+        .o_top_state(o_top_state)
     );
 
     initial begin
         // Iverilog
-        // $dumpfile("tb.vcd");
-        // $dumpvars(0, tb_top);
+        $dumpfile("tb.vcd");
+        $dumpvars(0, tb_top);
 
         // VCS 
-        $vcdplusfile("tb_top.vpd");
-        $vcdpluson;
+        // $vcdplusfile("tb_top.vpd");
+        // $vcdpluson;
         // $sdf_annotate("../mapped/top_mapped.sdf", dut);
         // // Prime Time        
         // $dumpfile("top.dump");
@@ -142,6 +150,8 @@ module tb_top;
             $display("ERROR: Failed to open file.");
             $finish;
         end
+
+        $fwrite(cycle_stats, "Layer, total_cycles, no_or_cycles, write_spad_cycles, ar_cycles, compute_cycles, or_cycles\n");
 
         // Write to weight SRAM
         file = $fopen(weight_file, "r");
@@ -212,7 +222,16 @@ module tb_top;
     always @(posedge i_clk) begin
         if (i_route_en) begin
             counter++;
+
             if (!o_or_en) no_or_counter++;
+
+            if (o_top_state == 2) begin
+                activation_routing_counter++;
+            end else if (o_top_state == 3 || o_top_state == 4) begin
+                compute_counter++;
+            end else if (o_top_state == 5) begin
+                output_routing_counter++;
+            end
         end
     end
 
@@ -222,7 +241,8 @@ module tb_top;
             $display("Simulation completed: o_done asserted.");
             $display("Total cycles: %d", counter);
 
-            $fwrite(cycle_stats, "%0d, %0d, %0d, %0d\n", layer_identifier, counter, no_or_counter, write_spad_counter);
+            $fwrite(cycle_stats, "%0d, %0d, %0d, %0d, %0d, %0d, %0d\n", layer_identifier, counter, no_or_counter, write_spad_counter, activation_routing_counter, compute_counter, output_routing_counter);
+            
             $fclose(cycle_stats);
             $fclose(output_file);
             $finish;
