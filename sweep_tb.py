@@ -87,7 +87,7 @@ def generate_simv_command(
         f"+LAYER_IDENTIFIER={layer_identifier} "
         f'+INPUT_FILE="{input_file}" '
         f'+WEIGHT_FILE="{weight_file}" '
-        f'+CYCLE_FILE="{cycle_file} "'
+        f'+CYCLE_FILE="{cycle_file}" '
         f'+OUTPUT_FILE="{output_file}"'
     )
     return cmd
