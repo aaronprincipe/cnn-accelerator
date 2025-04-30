@@ -229,7 +229,10 @@ module output_router #(
                         
                         data_left_cnt <= data_left_cnt - (SPAD_N - byte_offset);
                         input_valid   <= input_valid >> (SPAD_N - byte_offset);
-                        current_c     <= current_c + SPAD_N - byte_offset;
+                        if (current_c >= limit_c)
+                            state <= NEXT_ADDR;
+                        else
+                            current_c <= current_c + SPAD_N - byte_offset;
                     end
                 end
 
