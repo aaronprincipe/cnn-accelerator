@@ -18,7 +18,7 @@ module tb_output_router;
 
     // Systolic Array inputs
     logic [0:COLUMNS-1][2*DATA_WIDTH-1:0] i_ifmap;
-    logic [0:COLUMNS-1] i_valid;
+    // logic [0:COLUMNS-1] i_valid;
     
     // Quantization parameters
     logic [0:COLUMNS-1][DATA_WIDTH-1:0] i_quant_sh;
@@ -63,7 +63,7 @@ module tb_output_router;
         .i_reg_clear(i_reg_clear),
         .i_en(i_en),
         .i_ifmap(i_ifmap),
-        .i_valid(i_valid),
+        // .i_valid(i_valid),
         .o_shift_en(o_shift_en),
         .i_quant_sh(i_quant_sh),
         .i_quant_m0(i_quant_m0),
@@ -100,7 +100,7 @@ module tb_output_router;
         i_reg_clear = 0;
         i_en = 0;
         i_ifmap = '0;
-        i_valid = '0;
+        // i_valid = '0;
         for (int i=0; i<COLUMNS; i++) i_quant_sh[i] = 8'h04;    // Example quantization shift value
         for (int i=0; i<COLUMNS; i++) i_quant_m0[i] = 16'h0100; // Example quantization multiplier
         i_i_size = 6;
@@ -141,7 +141,7 @@ module tb_output_router;
         i_ifmap[1] = 16'h00B2;
         i_ifmap[2] = 16'h00C3;
         i_ifmap[3] = 16'h00D4;
-        i_valid = 4'b1111;
+        // i_valid = 4'b1111;
         i_en = 1;
         @(posedge i_clk);
         i_en = 0;
@@ -150,7 +150,7 @@ module tb_output_router;
         repeat(5) @(posedge i_clk);
         
         // Deassert valid but keep enable
-        i_valid = 4'b0000;
+        // i_valid = 4'b0000;
         
         // Wait until done
         wait(o_done);

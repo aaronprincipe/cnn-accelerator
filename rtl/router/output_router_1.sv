@@ -167,7 +167,7 @@ module output_router_1 #(
                     
                     if (i_en && !o_done) begin
                         state         <= QUANT_DATA;
-                        input_valid   <= i_valid;
+                        for(int i=0; i<COLUMNS; i=i+1) input_valid[i] <= (i < i_c_e - i_c_s);
                         for(int i=0; i<COLUMNS; i=i+1) quant_store_reg[i] <= 1'b1;
                     end 
                     else 
