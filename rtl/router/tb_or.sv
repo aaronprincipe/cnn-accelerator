@@ -50,7 +50,7 @@ module tb_output_router;
     logic o_done;
 
     // Instantiate the DUT
-    output_router_1 #(
+    output_router #(
         .SPAD_WIDTH(SPAD_WIDTH),
         .DATA_WIDTH(DATA_WIDTH),
         .SPAD_N(SPAD_N),
@@ -103,8 +103,8 @@ module tb_output_router;
         // i_valid = '0;
         // for (int i=0; i<COLUMNS; i++) i_quant_sh[i] = 8'h04;    // Example quantization shift value
         // for (int i=0; i<COLUMNS; i++) i_quant_m0[i] = 16'h0100; // Example quantization multiplier
-        i_quant_sh = 8'h04;
-        i_quant_m0 = 16'h0100;
+        i_quant_sh = 8'h05;
+        i_quant_m0 = 16'h9c8c;
         i_i_size = 6;
         i_c_size = 6;
         
@@ -139,10 +139,10 @@ module tb_output_router;
 
         // Set valid data input test data
         @(posedge i_clk);
-        i_ifmap[0] = 16'h00A1;
-        i_ifmap[1] = 16'h00B2;
-        i_ifmap[2] = 16'h00C3;
-        i_ifmap[3] = 16'h00D4;
+        i_ifmap[0] = 16'h0A01;
+        i_ifmap[1] = 16'h0B02;
+        i_ifmap[2] = 16'h0C03;
+        i_ifmap[3] = 16'h0D04;
         // i_valid = 4'b1111;
         i_en = 1;
         @(posedge i_clk);

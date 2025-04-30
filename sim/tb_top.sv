@@ -34,7 +34,7 @@ module tb_top;
     logic [ADDR_WIDTH-1:0] i_i_start_addr, i_i_addr_end;
     logic [ADDR_WIDTH-1:0] i_size, o_size, i_stride, i_c_size, i_c, o_c_size; 
     logic [ADDR_WIDTH-1:0] i_w_start_addr, i_w_addr_end, i_route_size;
-    logic [DATA_WIDTH-1:0] o_word;
+    logic [SRAM_DATA_WIDTH-1:0] o_word;
     logic o_word_valid;
     logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c;
 
