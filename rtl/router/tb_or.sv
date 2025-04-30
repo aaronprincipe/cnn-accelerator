@@ -43,7 +43,6 @@ module tb_output_router;
 
     // Outputs
     logic o_shift_en;
-    logic o_psum_out_en;
     logic [ADDR_WIDTH-1:0] o_addr;
     logic [SPAD_WIDTH-1:0] o_data_out;
     logic [SPAD_N-1:0] o_write_mask;
@@ -66,7 +65,6 @@ module tb_output_router;
         .i_ifmap(i_ifmap),
         .i_valid(i_valid),
         .o_shift_en(o_shift_en),
-        .o_psum_out_en(o_psum_out_en),
         .i_quant_sh(i_quant_sh),
         .i_quant_m0(i_quant_m0),
         .i_i_size(i_i_size),
@@ -145,6 +143,8 @@ module tb_output_router;
         i_ifmap[3] = 16'h00D4;
         i_valid = 4'b1111;
         i_en = 1;
+        @(posedge i_clk);
+        i_en = 0;
 
         // Hold for a few cycles to allow processing
         repeat(5) @(posedge i_clk);
