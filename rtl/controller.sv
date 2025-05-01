@@ -176,7 +176,7 @@ module top_controller # (
                         and X is from the weight router
                         and Cin is the number of elements in the FIFO
                     */
-                    if (cntr < (i_s_r)) begin
+                    if (cntr < (2*i_s_r + i_s_c)) begin
                         // o_pe_en <= 1;
                         cntr <= cntr + 1;
                     end else begin

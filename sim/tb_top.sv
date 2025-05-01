@@ -36,6 +36,7 @@ module tb_top;
     logic [ADDR_WIDTH-1:0] i_w_start_addr, i_w_addr_end, i_route_size;
     logic [SRAM_DATA_WIDTH-1:0] o_word;
     logic o_word_valid;
+    logic [ADDR_WIDTH-1:0] o_word_addr, o_word_byte_offset;
     logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c;
 
     logic [DATA_WIDTH*2-1:0] o_ofmap;
@@ -79,7 +80,9 @@ module tb_top;
         .o_o_y(o_o_y),
         .o_o_c(o_o_c),
         .o_or_en(o_or_en),
-        .o_top_state(o_top_state)
+        .o_top_state(o_top_state),
+        .o_word_addr(o_word_addr),
+        .o_word_byte_offset(o_word_byte_offset)
     );
 
     initial begin
@@ -151,7 +154,7 @@ module tb_top;
             $finish;
         end
 
-        $fwrite(cycle_stats, "Layer, total_cycles, no_or_cycles, write_spad_cycles, ar_cycles, compute_cycles, or_cycles\n");
+        //$fwrite(cycle_stats, "Layer, total_cycles, no_or_cycles, write_spad_cycles, ar_cycles, compute_cycles, or_cycles\n");
 
         // Write to weight SRAM
         file = $fopen(weight_file, "r");
@@ -208,8 +211,7 @@ module tb_top;
     // Monitor and write to output file whenever o_ofmap_valid is high
     always @(posedge i_clk) begin
         if (o_word_valid) begin
-            // $fwrite(output_file, "%d %d %d %d\n",o_o_x,o_o_y,o_o_c,o_word);
-            $fwrite(output_file, "%d\n",o_word);
+            $fwrite(output_file, "%h, %h, %h\n", o_word, o_word_addr, o_word_byte_offset);
         end
     end
 

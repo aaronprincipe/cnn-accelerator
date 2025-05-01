@@ -51,6 +51,8 @@ module top #(
     // For temp verification
     output logic [SPAD_DATA_WIDTH-1:0] o_word,
     output logic o_word_valid,
+    output logic [ADDR_WIDTH-1:0] o_word_addr,
+    output logic [ADDR_WIDTH-1:0] o_word_byte_offset,
     output logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c,
 
     input logic [ADDR_WIDTH-1:0] i_or_addr,
@@ -334,4 +336,6 @@ module top #(
 
     assign o_or_en = or_en;
     assign o_pe_en = pe_en;
+    assign o_word_addr = or_addr;
+    assign o_word_byte_offset = or_write_mask;
 endmodule
