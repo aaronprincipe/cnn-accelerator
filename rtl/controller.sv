@@ -59,8 +59,7 @@ module top_controller # (
     input logic i_wr_done,
     input logic i_or_done,
     output logic o_done,
-    output logic [2:0] o_state,
-    input logic i_conv_mode // 0: PWise, 1: DWise
+    output logic [2:0] o_state
 );
     logic [2:0] state;
     assign o_state = state;
@@ -122,17 +121,8 @@ module top_controller # (
             case (state)
                 IDLE: begin
                     o_s_reg_clear <= 0;
-                    if (i_wr_done) begin
-                        if (i_conv_mode) begin
-                            // Pointwise
-                            o_done <= 1;
-                        end else begin
-                            // Depthwise
-                            if (i_ir_done) begin
-                                o_done <= 1;
-                            end
-                        end
-
+                    if (i_wr_done & i_ir_done) begin
+                        o_done <= 1;
                     end else if (i_route_en) begin
                         if (i_ir_done) begin
                             o_ir_reg_clear <= 1;
