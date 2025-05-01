@@ -46,7 +46,6 @@ module output_router #(
     output logic [ADDR_WIDTH-1:0] o_o_y,
     output logic [ADDR_WIDTH-1:0] o_o_c
 );
-    logic [COLUMNS*ROWS-1:0]  input_valid;
     logic [$clog2(COLUMNS*ROWS):0] num_input_valid;
     // Parallel quant
     logic                                 quant_en;
@@ -59,6 +58,8 @@ module output_router #(
     logic        [SPAD_WIDTH-1:0]         data_buffer;  // buffer data to be written to spad
     logic        [COLUMNS*DATA_WIDTH-1:0] data_left;    // leftover data not written to spad
     logic signed [$clog2(COLUMNS)+1:0]    data_left_cnt;
+    logic        [$clog2(SPAD_N):0]       bytes_to_write;
+    logic        [$clog2(SPAD_N):0]       bytes_in_buffer;
     // 
     logic [ADDR_WIDTH-1:0] current_x, current_y, current_c;
     logic [ADDR_WIDTH-1:0] start_x, start_y, start_c;
@@ -95,11 +96,17 @@ module output_router #(
     // quant data is only valid when all data is valid;
     assign quant_all_valid = &quant_valid;
 
-    always@(input_valid)begin
-        num_input_valid = 0;
-        for (int i=0; i<COLUMNS*ROWS; i=i+1) num_input_valid = num_input_valid + input_valid[i]; 
+    always_comb begin
+        bytes_in_buffer = SPAD_N - byte_offset;
+        bytes_to_write = (data_left_cnt < bytes_in_buffer) ? data_left_cnt : bytes_in_buffer;
     end
 
+    always_comb begin
+        o_addr     = word_addr;
+        o_data_out = data_buffer;
+    end
+
+    // debug
     always_comb begin
         o_word       = o_data_out;
         o_word_valid = o_valid;
@@ -121,7 +128,7 @@ module output_router #(
         if (!i_nrst || i_reg_clear) begin
             state           <= IDLE_STATE;
             
-            input_valid     <= 0;
+            num_input_valid <= 0;
 
             quant_en        <= 0;
             quant_store_reg <= 0;
@@ -141,8 +148,8 @@ module output_router #(
             limit_y         <= 0;
             limit_c         <= 0;
 
-            o_addr          <= 0;
-            o_data_out      <= 0;
+            // o_addr          <= 0;
+            // o_data_out      <= 0;
             o_write_mask    <= 0;
             o_valid         <= 0;
             o_shift_en      <= 0;
@@ -166,8 +173,8 @@ module output_router #(
                     end
                     
                     if (i_en && !o_done) begin
-                        state       <= QUANT_DATA;
-                        input_valid <= {ROWS*COLUMNS{1'b1}};
+                        state           <= QUANT_DATA;
+                        num_input_valid <= ROWS * COLUMNS;
                         quant_store_reg <= 1'b1;
                     end 
                     else 
@@ -176,7 +183,7 @@ module output_router #(
 
                 QUANT_DATA: begin
                     if (num_input_valid > 0) begin
-                        quant_store_reg <= 1'b0;
+                        quant_store_reg   <= 1'b0;
                         if (quant_all_valid) begin
                             state         <= COLLECT_IN;
                             quant_en      <= 0;
@@ -192,69 +199,55 @@ module output_router #(
                 end
 
                 COLLECT_IN: begin
-                    state <= SPAD_WRITE;
-                    o_valid      <= 0;
-                    o_write_mask <= 0;
-                    if (byte_offset != 0) begin
+                    if (data_left_cnt > 0) begin
+                        state <= SPAD_WRITE;
                         {data_left, data_buffer} <= data_left << (byte_offset * DATA_WIDTH);
-                        // data_buffer <= data_left << (byte_offset * DATA_WIDTH);
-                        // data_left   <= data_left >> (SPAD_WIDTH - byte_offset * DATA_WIDTH);
-                        // data_left_cnt <= data_left_cnt - SPAD_N + byte_offset;
-                        // input_valid <= input_valid >> (SPAD_N - byte_offset);
                     end 
                     else begin
-                        {data_left, data_buffer} <= data_left;
-                        // data_buffer <= data_left;
-                        // data_left   <= data_left >> (SPAD_WIDTH);
-                        // data_left_cnt <= data_left_cnt - SPAD_N;
-                        // input_valid <= input_valid >> (SPAD_N);
+                        state <= NEXT_ADDR;
                     end
                 end
 
                 SPAD_WRITE: begin
-                    // o_valid      <= 0;
-                    // o_write_mask <= 0;
-                    if (data_left_cnt <= 0) begin
-                        state <= NEXT_ADDR;
-                        o_valid      <= 0;
-                        o_data_out   <= 0;
-                    end else begin
-                        state <= COLLECT_IN;
-                        
-                        o_valid      <= 1;
-                        o_addr       <= word_addr;
-                        o_data_out   <= data_buffer;
-                        for(int i=0; i<SPAD_N; i=i+1) 
-                            o_write_mask[i+byte_offset] <= (i < data_left_cnt)? input_valid[i] : 1'b0;
-                        
-                        data_left_cnt <= data_left_cnt - (SPAD_N - byte_offset);
-                        input_valid   <= input_valid >> (SPAD_N - byte_offset);
-                        if (current_c >= limit_c)
-                            state <= NEXT_ADDR;
-                        else
-                            current_c <= current_c + SPAD_N - byte_offset;
+                    if (!o_valid) begin
+                        o_valid <= 1;
+                        o_write_mask <= ({SPAD_N{1'b1}} >> (SPAD_N - bytes_to_write)) << byte_offset;
+                            
+                        num_input_valid <= num_input_valid - bytes_to_write;
+                        data_left_cnt   <= data_left_cnt   - bytes_to_write;
+                    end
+                    else begin
+                        o_valid         <= 0;
+                        o_write_mask    <= 0;
+                        state           <= NEXT_ADDR;
                     end
                 end
 
                 NEXT_ADDR: begin
-                    if (current_x == limit_x && current_y == limit_y) begin
-                        state <= DONE_STATE;
-                        o_shift_en <= 1;
-                    end
-                    else begin 
-                        state <= QUANT_DATA;
+                    if (current_c >= limit_c || data_left_cnt <= 0) begin
                         current_c <= start_c;
-                    end
+                        o_shift_en <= 1;
 
-                    if (current_y >= limit_y) begin
-                        current_y <= start_y;
-                        if (current_x >= limit_x) begin
-                            current_x <= start_x;
+                        if (current_y >= limit_y) begin
+                            current_y <= start_y;
+                            if (current_x >= limit_x) begin
+                                current_x <= start_x;
+                            end else begin
+                                current_x <= current_x + 1;
+                            end
                         end else begin
-                            current_x <= current_x + 1;
+                            current_y <= current_y + 1;
+                        end
+                        
+                        if (current_x == limit_x && current_y == limit_y) begin
+                            state <= DONE_STATE;
+                        end
+                        else begin 
+                            state <= QUANT_DATA;
                         end
                     end else begin
-                        current_y <= current_y + 1;
+                        state <= COLLECT_IN;
+                        current_c       <= current_c       + bytes_to_write;
                     end
                 end
 
