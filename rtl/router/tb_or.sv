@@ -3,7 +3,7 @@
 module tb_output_router;
 
     // Parameters
-    parameter int SPAD_WIDTH = 32;
+    parameter int SPAD_WIDTH = 16;
     parameter int DATA_WIDTH = 8;
     parameter int SPAD_N = SPAD_WIDTH / DATA_WIDTH;
     parameter int ADDR_WIDTH = 8;
@@ -127,8 +127,8 @@ module tb_output_router;
         // for (int i=0; i<COLUMNS; i++) i_quant_m0[i] = 16'h0100; // Example quantization multiplier
         i_quant_sh = 8'h05;
         i_quant_m0 = 16'h9c8c;
-        i_i_size = 3;
-        i_c_size = 3;
+        i_i_size = 5;
+        i_c_size = 5;
         
         // Initialize tile dimensions
         i_x_s = 0;
@@ -161,8 +161,8 @@ module tb_output_router;
 
         // Set valid data input test data
         @(posedge i_clk);
-        i_ifmap[0] = 16'h0A01;
-        i_ifmap[1] = 16'h0B02;
+        i_ifmap[0] = 16'h0101;
+        i_ifmap[1] = 16'h0202;
         // i_ifmap[2] = 16'h0C03;
         // i_ifmap[3] = 16'h0D04;
         // i_valid = 4'b1111;
@@ -172,23 +172,13 @@ module tb_output_router;
 
         // Hold for a few cycles to allow processing
         // repeat(5) @(posedge i_clk);/
-        wait (o_shift_en);
-        @(posedge i_clk);
-        i_ifmap[0] = 16'h0C03;
-        i_ifmap[1] = 16'h0D04;
-        @(posedge i_clk);
-        
-        wait (o_shift_en);
-        @(posedge i_clk);
-        i_ifmap[0] = 16'h0E05;
-        i_ifmap[1] = 16'h0F06;
-        @(posedge i_clk);
-        
-        wait (o_shift_en);
-        @(posedge i_clk);
-        i_ifmap[0] = 16'h1007;
-        i_ifmap[1] = 16'h2008;
-        @(posedge i_clk);
+        for (int i=0; i<i_xy_length-1; i++) begin
+            wait (o_shift_en);
+            @(posedge i_clk);
+            i_ifmap[0] = ((3+i) << 8) + (3+i);
+            i_ifmap[1] = ((4+i) << 8) + (4+i);
+            @(posedge i_clk);
+        end
         
         
         // Deassert valid but keep enable

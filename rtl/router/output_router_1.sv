@@ -223,11 +223,11 @@ module output_router #(
                             
                         num_input_valid <= num_input_valid - bytes_to_write;
                         data_left_cnt   <= data_left_cnt   - bytes_to_write;
-                        current_c       <= current_c       + bytes_to_write;
                     end
                     else begin
                         o_valid         <= 0;
                         // o_write_mask    <= 0;
+                        current_c       <= current_c       + bytes_to_write;
                         state           <= NEXT_ADDR;
                     end
                 end
