@@ -65,6 +65,7 @@ module output_router #(
     logic [ADDR_WIDTH-1:0] prev_x, prev_y;
     logic [ADDR_WIDTH-1:0] start_x, start_y, start_c;
     logic [ADDR_WIDTH-1:0] limit_x, limit_y, limit_c, limit_xy;
+    logic [ADDR_WIDTH-1:0] xy_count;
     // SPAD address
     logic [ADDR_WIDTH-1:0] byte_addr;   // which byte in the SPAD
     logic [ADDR_WIDTH-1:0] word_addr;   // which word in the SPAD
@@ -143,14 +144,15 @@ module output_router #(
             current_y       <= 0;
             prev_x          <= 0;
             prev_y          <= 0;
-            current_c       <= 0;
             start_x         <= 0;
             start_y         <= 0;
-            start_c         <= 0;
             limit_x         <= 0;
             limit_y         <= 0;
-            limit_c         <= 0;
+            xy_count        <= 0;
             limit_xy        <= 0;
+            current_c       <= 0;
+            start_c         <= 0;
+            limit_c         <= 0;
 
             // o_addr          <= 0;
             // o_data_out      <= 0;
@@ -171,6 +173,7 @@ module output_router #(
                         limit_x   <= i_x_e;
                         limit_y   <= i_y_e;
                         limit_xy  <= i_xy_length;
+                        xy_count  <= 0;
                     end
 
                     if (i_c_valid) begin
@@ -242,12 +245,15 @@ module output_router #(
                                 current_x <= start_x;
                             end else begin
                                 current_x <= current_x + 1;
+                                xy_count <= xy_count + 1;
                             end
                         end else begin
                             current_y <= current_y + 1;
+                            xy_count <= xy_count + 1;
                         end
-                        
-                        if (current_x == limit_x && current_y == limit_y) begin
+
+                        // if (current_x == limit_x && current_y == limit_y) begin
+                        if (xy_count == limit_xy) begin
                             state <= DONE_STATE;
                         end
                         else begin 
