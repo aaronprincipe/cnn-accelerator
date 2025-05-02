@@ -1,6 +1,6 @@
 ../rtl/top.sv
 ../rtl/controller.sv
-../rtl/router/output_router_1.sv
+../rtl/router/output_router.sv
 ../rtl/router/quant.sv
 ../rtl/router/input_router/input_router.sv
 ../rtl/router/input_router/input_controller.sv

@@ -215,7 +215,7 @@ module tb_top;
     // Monitor and write to output file whenever o_ofmap_valid is high
     always @(posedge i_clk) begin
         if (o_word_valid) begin
-            $fwrite(output_file, "%h, %h, %h, %h, %h, %h\n", o_o_x, o_o_y, o_o_c, o_word_addr, o_word, o_word_byte_offset);
+            $fwrite(output_file, "%h, %h, %h, %h, %h, %b\n", o_o_x, o_o_y, o_o_c, o_word_addr, o_word, o_word_byte_offset);
         end
     end
 
