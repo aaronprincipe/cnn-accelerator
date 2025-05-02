@@ -222,7 +222,7 @@ module output_router #(
                     end
                     else begin
                         o_valid         <= 0;
-                        o_write_mask    <= 0;
+                        // o_write_mask    <= 0;
                         state           <= NEXT_ADDR;
                     end
                 end
