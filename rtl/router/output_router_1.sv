@@ -104,7 +104,7 @@ module output_router #(
     end
 
     always_comb begin
-        o_addr     = word_addr;
+        // o_addr     = word_addr;
         o_data_out = data_buffer;
     end
 
@@ -154,7 +154,7 @@ module output_router #(
             start_c         <= 0;
             limit_c         <= 0;
 
-            // o_addr          <= 0;
+            o_addr          <= 0;
             // o_data_out      <= 0;
             o_write_mask    <= 0;
             o_valid         <= 0;
@@ -222,6 +222,7 @@ module output_router #(
                 SPAD_WRITE: begin
                     if (!o_valid) begin
                         o_valid <= 1;
+                        o_addr <= word_addr;
                         o_write_mask <= ({SPAD_N{1'b1}} >> (SPAD_N - bytes_to_write)) << byte_offset;
                             
                         num_input_valid <= num_input_valid - bytes_to_write;
