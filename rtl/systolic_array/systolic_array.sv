@@ -30,7 +30,7 @@ module systolic_array #(
     generate
         for (ii=0; ii < WIDTH; ii++) begin : x_ios
             assign mat_B[0][ii] = i_weight[ii];
-            assign o_ofmap[ii] = mat_C[HEIGHT-1][ii];
+            assign o_ofmap[ii] = mat_C[0][ii];
         end
     endgenerate
 

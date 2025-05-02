@@ -182,13 +182,14 @@ module output_router #(
                 end
 
                 QUANT_DATA: begin
+                    o_shift_en <= 0;
                     if (num_input_valid > 0) begin
                         quant_store_reg   <= 1'b0;
                         if (quant_all_valid) begin
                             state         <= COLLECT_IN;
                             quant_en      <= 0;
                             data_left     <= quant_o_act;
-                            data_left_cnt <= (num_input_valid < COLUMNS)? num_input_valid : COLUMNS;
+                            data_left_cnt <= (limit_c - start_c + 1 < COLUMNS)? limit_c - start_c + 1 : COLUMNS;
                         end else begin
                             quant_en      <= 1'b1;
                             for(int i=0; i<COLUMNS; i=i+1) quant_i_act[i] <= i_ifmap[COLUMNS-i-1];
@@ -215,6 +216,7 @@ module output_router #(
                             
                         num_input_valid <= num_input_valid - bytes_to_write;
                         data_left_cnt   <= data_left_cnt   - bytes_to_write;
+                        current_c       <= current_c       + bytes_to_write;
                     end
                     else begin
                         o_valid         <= 0;
@@ -226,7 +228,6 @@ module output_router #(
                 NEXT_ADDR: begin
                     if (current_c >= limit_c || data_left_cnt <= 0) begin
                         current_c <= start_c;
-                        o_shift_en <= 1;
 
                         if (current_y >= limit_y) begin
                             current_y <= start_y;
@@ -244,10 +245,11 @@ module output_router #(
                         end
                         else begin 
                             state <= QUANT_DATA;
+                            o_shift_en <= 1;
                         end
                     end else begin
                         state <= COLLECT_IN;
-                        current_c       <= current_c       + bytes_to_write;
+                        o_shift_en <= 0;
                     end
                 end
 

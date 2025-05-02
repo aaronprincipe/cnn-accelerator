@@ -3,7 +3,7 @@
 module tb_output_router;
 
     // Parameters
-    parameter int SPAD_WIDTH = 64;
+    parameter int SPAD_WIDTH = 32;
     parameter int DATA_WIDTH = 8;
     parameter int SPAD_N = SPAD_WIDTH / DATA_WIDTH;
     parameter int ADDR_WIDTH = 8;
@@ -49,6 +49,13 @@ module tb_output_router;
     logic o_valid;
     logic o_done;
 
+    // Debug
+    logic [SPAD_WIDTH-1:0] o_word;
+    logic                  o_word_valid;
+    logic [ADDR_WIDTH-1:0] o_o_x;
+    logic [ADDR_WIDTH-1:0] o_o_y;
+    logic [ADDR_WIDTH-1:0] o_o_c;
+
     // Instantiate the DUT
     output_router #(
         .SPAD_WIDTH(SPAD_WIDTH),
@@ -82,17 +89,32 @@ module tb_output_router;
         .o_data_out(o_data_out),
         .o_write_mask(o_write_mask),
         .o_valid(o_valid),
-        .o_done(o_done)
+        .o_done(o_done),
+        .o_word(o_word),
+        .o_word_valid(o_word_valid),
+        .o_o_x(o_o_x),
+        .o_o_y(o_o_y),
+        .o_o_c(o_o_c)
     );
 
     // Clock generation
     always #5 i_clk = ~i_clk;
 
+    integer output_file;
+    string out_file;
     // Initialization
     initial begin
         // Dump waveform
         $dumpfile("tb.vcd");
         $dumpvars;
+        
+        if (!$value$plusargs("OUTPUT_FILE=%s", out_file)) out_file = "output.txt";
+        // Open output file
+        output_file = $fopen(out_file, "w");
+        if (output_file == 0) begin
+            $display("Error opening output file!");
+            $finish;
+        end
 
         // Initialize
         i_clk = 0;
@@ -105,20 +127,20 @@ module tb_output_router;
         // for (int i=0; i<COLUMNS; i++) i_quant_m0[i] = 16'h0100; // Example quantization multiplier
         i_quant_sh = 8'h05;
         i_quant_m0 = 16'h9c8c;
-        i_i_size = 6;
-        i_c_size = 6;
+        i_i_size = 3;
+        i_c_size = 3;
         
         // Initialize tile dimensions
         i_x_s = 0;
         i_x_e = 1;
         i_y_s = 0;
-        i_y_e = 2;
-        i_xy_length = 6;
+        i_y_e = 1;
+        i_xy_length = 4;
         i_xy_valid = 0;
         
         // Initialize channel dimensions
         i_c_s = 0;
-        i_c_e = 5;
+        i_c_e = 1;
         i_c_valid = 0;
 
         // Reset
@@ -141,15 +163,33 @@ module tb_output_router;
         @(posedge i_clk);
         i_ifmap[0] = 16'h0A01;
         i_ifmap[1] = 16'h0B02;
-        i_ifmap[2] = 16'h0C03;
-        i_ifmap[3] = 16'h0D04;
+        // i_ifmap[2] = 16'h0C03;
+        // i_ifmap[3] = 16'h0D04;
         // i_valid = 4'b1111;
         i_en = 1;
         @(posedge i_clk);
         i_en = 0;
 
         // Hold for a few cycles to allow processing
-        repeat(5) @(posedge i_clk);
+        // repeat(5) @(posedge i_clk);/
+        wait (o_shift_en);
+        @(posedge i_clk);
+        i_ifmap[0] = 16'h0C03;
+        i_ifmap[1] = 16'h0D04;
+        @(posedge i_clk);
+        
+        wait (o_shift_en);
+        @(posedge i_clk);
+        i_ifmap[0] = 16'h0E05;
+        i_ifmap[1] = 16'h0F06;
+        @(posedge i_clk);
+        
+        wait (o_shift_en);
+        @(posedge i_clk);
+        i_ifmap[0] = 16'h1007;
+        i_ifmap[1] = 16'h2008;
+        @(posedge i_clk);
+        
         
         // Deassert valid but keep enable
         // i_valid = 4'b0000;
@@ -161,6 +201,14 @@ module tb_output_router;
         repeat(5) @(posedge i_clk);
 
         $finish;
+    end
+    
+    // Monitor and write to output file whenever o_ofmap_valid is high
+    always @(posedge i_clk) begin
+        if (o_word_valid) begin
+            $fwrite(output_file, "%h %h %h %h %h %h\n",o_o_x,o_o_y,o_o_c,o_addr,o_write_mask,o_word);
+            // $fwrite(output_file, "%d\n",o_word);
+        end
     end
 
 endmodule
