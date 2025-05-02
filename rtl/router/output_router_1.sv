@@ -63,7 +63,7 @@ module output_router #(
     // 
     logic [ADDR_WIDTH-1:0] current_x, current_y, current_c;
     logic [ADDR_WIDTH-1:0] start_x, start_y, start_c;
-    logic [ADDR_WIDTH-1:0] limit_x, limit_y, limit_c;
+    logic [ADDR_WIDTH-1:0] limit_x, limit_y, limit_c, limit_xy;
     // SPAD address
     logic [ADDR_WIDTH-1:0] byte_addr;    // which byte in the SPAD
     logic [ADDR_WIDTH-1:0] word_addr;    // which word in the SPAD
@@ -147,6 +147,7 @@ module output_router #(
             limit_x         <= 0;
             limit_y         <= 0;
             limit_c         <= 0;
+            limit_xy        <= 0;
 
             // o_addr          <= 0;
             // o_data_out      <= 0;
@@ -164,6 +165,7 @@ module output_router #(
                         start_y   <= i_y_s;
                         limit_x   <= i_x_e;
                         limit_y   <= i_y_e;
+                        limit_xy  <= i_xy_length;
                     end
 
                     if (i_c_valid) begin
@@ -174,7 +176,7 @@ module output_router #(
                     
                     if (i_en && !o_done) begin
                         state           <= QUANT_DATA;
-                        num_input_valid <= ROWS * COLUMNS;
+                        num_input_valid <= limit_xy * (limit_c - start_c);
                         quant_store_reg <= 1'b1;
                     end 
                     else 
