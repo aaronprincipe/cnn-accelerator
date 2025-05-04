@@ -215,7 +215,12 @@ module ir_controller #(
                         // Pwise
                         o_dl_end_addr <= (i_start_addr * SPAD_N) + o_x * (i_i_size * i_i_c_size) + (o_y * i_i_c_size) + (i_i_c_size);
                         prev_addr <= o_x * (i_i_size * i_i_c_size) + (o_y * i_i_c_size) + (i_i_c_size);
-                        o_dl_start_addr <= prev_addr + (i_start_addr * SPAD_N);
+
+                        // Just make sure that its the address - 1
+                        if (prev_addr - 1 + (i_start_addr * SPAD_N) >= 0)
+                            o_dl_start_addr <= prev_addr - 1 + (i_start_addr * SPAD_N);
+                        else
+                            o_dl_start_addr <= 0;
 
                         if (!first_row) begin
                             first_row <= 1;
@@ -265,17 +270,17 @@ module ir_controller #(
 
                 TILE_COMPARISON: begin
                     first_row <= 0;
-                    o_xy_valid <= 0;
-                    o_y_s <= 0;
-                    o_x_s <= 0;
-                    o_y_e <= 0;
-                    o_x_e <= 0;
                     // If FIFO is full - reuse weights in Weight FIFO
                     // If FIFO route done - new set of weights
                     if (i_fifo_route_done || i_fifo_full || i_fifo_idle) begin
                         o_route_en <= 0;
                         o_ready <= 1;
                         o_t <= i_slots;
+                        o_xy_valid <= 0;
+                        o_y_s <= 0;
+                        o_x_s <= 0;
+                        o_y_e <= 0;
+                        o_x_e <= 0;
                         state <= DATA_OUT;
                     end else begin
                         o_route_en <= 1;

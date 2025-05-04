@@ -178,6 +178,14 @@ module wr_controller #(
                         // Pwise
                         o_dl_end_addr <= (i_start_addr * SPAD_N) + (o_c + 1) * i_i_c_size;
                         o_dl_start_addr <= (i_start_addr * SPAD_N) + o_c * i_i_c_size;
+            
+                        // Just make sure that its the address - 1
+                        if (((i_start_addr * SPAD_N) + o_c * i_i_c_size) - 1 >= 0) begin
+                            o_dl_start_addr <= ((i_start_addr * SPAD_N) + o_c * i_i_c_size) - 1;
+                        end else begin
+                            o_dl_start_addr <= 0;
+                        end
+
                         if (!first_col) begin
                             first_col <= 1;
                             o_tile_addr <= ((i_start_addr * SPAD_N) + o_c * i_i_c_size) >> $clog2(SPAD_N);
