@@ -180,8 +180,7 @@ module wr_controller #(
                             end else begin
                                 o_tile_addr <= 0;
                             end
-
-                            o_tile_addr <= i_start_addr - 1;
+                            
                         end
                     end else begin
                         // Pwise
