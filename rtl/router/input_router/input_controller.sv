@@ -30,7 +30,7 @@ module ir_controller #(
     output logic [0:KERNEL_LENGTH-1][ADDR_WIDTH-1:0] o_dl_sw_addr,
     output logic [ADDR_WIDTH-1:0] o_dl_start_addr,
     output logic [ADDR_WIDTH-1:0] o_dl_end_addr,
-    output logic [ROW-1:0] o_dl_id,
+    output logic [ADDR_WIDTH-1:0] o_dl_id,
     output logic o_dl_addr_write_en,
 
     // Output router signals
