@@ -186,7 +186,7 @@ module top_controller # (
                     // for the last data to traverse to all the needed PE
                     // This is the number of cycles it will take to compute
                     if (cntr < max_compute_cycles) begin
-                        // o_pe_en <= 1;
+                        o_pe_en <= 1;
                         cntr <= cntr + 1;
                     end else begin
                         o_pe_en <= 0;
