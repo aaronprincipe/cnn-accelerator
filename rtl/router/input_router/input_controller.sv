@@ -284,11 +284,7 @@ module ir_controller #(
                         o_route_en <= 0;
                         o_ready <= 1;
                         o_t <= i_slots;
-                        o_xy_valid <= 0;
-                        o_y_s <= 0;
-                        o_x_s <= 0;
-                        o_y_e <= 0;
-                        o_x_e <= 0;
+
                         state <= DATA_OUT;
                     end else begin
                         o_route_en <= 1;
@@ -309,8 +305,6 @@ module ir_controller #(
                         end
 
                         o_tr_clear <= 1;
-
-
                         state <= IDLE;
                     end else if (i_pop_en) begin
                         o_pop_en <= 1;

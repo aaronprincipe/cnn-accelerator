@@ -48,6 +48,7 @@ module top_controller # (
     output logic o_ir_reg_clear,
     output logic o_wr_reg_clear,
     output logic o_s_reg_clear,
+    output logic o_or_reg_clear,
 
     // Dimensions
     output logic [ADDR_WIDTH-1:0] o_o_c,
@@ -127,6 +128,7 @@ module top_controller # (
             case (state)
                 IDLE: begin
                     o_s_reg_clear <= 0;
+                    o_or_reg_clear <= 0;
                     if (i_wr_done & i_ir_done) begin
                         o_done <= 1;
                     end else if (i_route_en) begin
@@ -200,6 +202,7 @@ module top_controller # (
                     o_psum_out_en <= 0;
                     if (i_or_done) begin
                         o_s_reg_clear <= 1;
+                        o_or_reg_clear <= 1;
                         o_or_en <= 0;
                         state <= IDLE;
                     end else begin

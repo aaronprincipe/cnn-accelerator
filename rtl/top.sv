@@ -87,7 +87,7 @@ module top #(
     logic ir_context_done, wr_context_done;
     logic ir_done, wr_done, or_done;
     logic ir_tile_done, wr_tile_done;
-    logic ir_reg_clear, wr_reg_clear, s_reg_clear;
+    logic ir_reg_clear, wr_reg_clear, s_reg_clear, or_reg_clear;
     logic pe_en, psum_out_en, scan_en;
     logic output_done;
     logic [ADDR_WIDTH-1:0] o_c;
@@ -169,6 +169,7 @@ module top #(
         .o_ir_reg_clear(ir_reg_clear),
         .o_wr_reg_clear(wr_reg_clear),
         .o_s_reg_clear(s_reg_clear),
+        .o_or_reg_clear(or_reg_clear),
         .o_o_c(o_c),
         .i_ir_done(ir_done),
         .i_wr_done(wr_done),
@@ -289,7 +290,7 @@ module top #(
     ) or_inst (
         .i_clk(i_clk),
         .i_nrst(i_nrst),
-        .i_reg_clear(i_reg_clear),
+        .i_reg_clear(i_reg_clear || or_reg_clear),
         .i_en(or_en),
         .i_ifmap(ofmap),
         .i_valid(),
