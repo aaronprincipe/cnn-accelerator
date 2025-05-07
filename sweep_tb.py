@@ -97,61 +97,67 @@ def generate_simv_command(
 def main():
     csv_path = "vww/metadata.csv"
 
-    for d in dimensions:
-        for spad in spad_sizing:
-            spad_data_width, addr_width = spad
-            rows = d
-            cols = d
-            miso_depth = d
-            mpp_depth = 9
+    spad_sizing = [(32,13), (64,12), (128,11), (256,10), (512,9)]
+    dimensions = [16, 32, 64, 128]
 
-            write_system_parameters(spad_data_width, addr_width, rows, cols, miso_depth, mpp_depth)
-            # Synthesize design
-            sim_command = "vcs -f ../filelist.txt -full64 -sverilog -debug_pp"
-            subprocess.run(sim_command, shell=True)
-            print(f"Compilation completed for {d}x{d}x{d} with SPAD data width {spad_data_width}\n")
-            
-            with open(csv_path, mode='r') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    identifier = row['Identifier']
-                    h = int(row['H/W'])
-                    w = int(row['H/W'])
-                    c_i = int(row['C'])
-                    c_o = int(row['Oc'])
-                    stride = int(row['Stride'])
-                    type = row['Type']
+    # Finished (16,32,13)
+    sweep = [(16,32,13), (16, 64, 12), (16, 128, 11), (16, 256, 10), (16, 512, 9), 
+             (32, 32, 13), (32, 64, 12), (32, 128, 11), (32, 256, 10), (32, 512, 9), 
+             (64, 32, 13), (64, 64, 12), (64, 128, 11), (64, 256, 10), (64, 512, 9), 
+             (128, 32, 13), (128, 64, 12), (128, 128, 11), (128, 256, 10), (128, 512, 9)]
+
+    for d, spad_data_width, addr_width in sweep:
+        rows = cols = miso_depth = d
+        mpp_depth = 9
+        mpp_depth = 9
+
+        write_system_parameters(spad_data_width, addr_width, rows, cols, miso_depth, mpp_depth)
+        # Synthesize design
+        sim_command = "vcs -f ../filelist.txt -full64 -sverilog -debug_pp"
+        subprocess.run(sim_command, shell=True)
+        print(f"Compilation completed for {d}x{d}x{d} with SPAD data width {spad_data_width}\n")
+        
+        with open(csv_path, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                identifier = row['Identifier']
+                h = int(row['H/W'])
+                w = int(row['H/W'])
+                c_i = int(row['C'])
+                c_o = int(row['Oc'])
+                stride = int(row['Stride'])
+                type = row['Type']
+                
+                # 0 for Pointwise and 1 for Depthwise
+                conv_mode = 0 if type == "P" else 1
+                
+                out_size = h if type == "P" else ((h-3) // stride) + 1
+                i_filename = f"vww/{spad_data_width}_bits/inputs/{identifier}.txt"
+                w_filename = f"vww/{spad_data_width}_bits/weights/{identifier}.txt"
+                o_filename = f"data/out/{d}_{d}_{d}_{spad_data_width}_output.txt"
+
+                for precision in [2, 4, 8]:
+                    cycle_file = f"data/cycles/{precision}b_{d}_{d}_{d}_{spad_data_width}_cycle.txt"
+                    tb_cmd = generate_simv_command(
+                        conv_mode,
+                        h,
+                        c_i,
+                        c_o,
+                        out_size,
+                        stride,
+                        precision,
+                        identifier,
+                        i_filename,
+                        w_filename,
+                        cycle_file,
+                        o_filename
+                    )
                     
-                    # 0 for Pointwise and 1 for Depthwise
-                    conv_mode = 0 if type == "P" else 1
-                    
-                    out_size = h if type == "P" else ((h-3) // stride) + 1
-                    i_filename = f"vww/{spad_data_width}_bits/inputs/{identifier}.txt"
-                    w_filename = f"vww/{spad_data_width}_bits/weights/{identifier}.txt"
-                    o_filename = f"data/out/{d}_{d}_{d}_{spad_data_width}_output.txt"
+                    print(f"Processing {identifier} with {precision}-bit precision and dimensions {d}x{d}x{d} and SPAD data width {spad_data_width}\n")
+                    subprocess.run(tb_cmd, shell=True)
 
-                    for precision in [2, 4, 8]:
-                        cycle_file = f"data/cycles/{precision}b_{d}_{d}_{d}_{spad_data_width}_cycle.txt"
-                        tb_cmd = generate_simv_command(
-                            conv_mode,
-                            h,
-                            c_i,
-                            c_o,
-                            out_size,
-                            stride,
-                            precision,
-                            identifier,
-                            i_filename,
-                            w_filename,
-                            cycle_file,
-                            o_filename
-                        )
-                        
-                        print(f"Processing {identifier} with {precision}-bit precision and dimensions {d}x{d}x{d} and SPAD data width {spad_data_width}\n")
-                        subprocess.run(tb_cmd, shell=True)
-
-                        with open("simulation_log.txt", "a") as log_file:
-                            log_file.write(f"Finished {identifier} with {precision}-bit precision and dimensions {d}x{d}x{d} and SPAD data width {spad_data_width}\n")
+                    with open("simulation_log.txt", "a") as log_file:
+                        log_file.write(f"Finished {identifier} with {precision}-bit precision and dimensions {d}x{d}x{d} and SPAD data width {spad_data_width}\n")
 
 if __name__ == "__main__":
     main()
