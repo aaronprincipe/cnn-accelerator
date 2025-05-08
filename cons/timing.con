@@ -26,7 +26,7 @@ set_clock_uncertainty -setup $CLK_UNCERTAINTY_SETUP [get_clocks i_clk]
 # set_output_delay $OUTPUT_DELAY_MAX_FRACTION -max -clock i_clk [all_outputs]
 
 ## Set environmental constraints.
-set_driving_cell -lib_cell $DRIVING_CELL [remove_from_collection [all_inputs] [get_ports i_clk]]
+set_driving_cell -lib_cell $DRIVING_CELL [all_inputs]
 set_load $OUTPUT_LOAD [all_outputs]
 
 ## Create default path groups.

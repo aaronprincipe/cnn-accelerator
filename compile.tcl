@@ -11,9 +11,9 @@ source timing.con
 check_timing > logs/check_timing.log
 compile
 report_constraint -all_violators > logs/constraint_report.log
-report_area -hierarchy -levels 3 > logs/area_report.log
-report_timing -hierarchy -levels 3 > logs/timing_report.log
-report_power -hierarchy -levels 3  > logs/power_report.log
+report_area -hierarchy > logs/area_report.log
+report_timing -hierarchy > logs/timing_report.log
+report_power -hierarchy  > logs/power_report.log
 write_file -format verilog -hierarchy -output mapped/top_mapped.v
 write_file -format ddc -hierarchy -output mapped/top_mapped.ddc
 write_sdf mapped/top_mapped.sdf
