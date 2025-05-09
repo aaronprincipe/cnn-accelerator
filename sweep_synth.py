@@ -35,9 +35,9 @@ source timing.con
 check_timing > logs/{dimension}_{spad_width}_check_timing.log
 compile
 report_constraint -all_violators > logs/{dimension}_{spad_width}_constraint_report.log
-report_area > logs/{dimension}_{spad_width}_area_report.log
-report_timing > logs/{dimension}_{spad_width}_timing_report.log
-report_power > logs/{dimension}_{spad_width}_power_report.log
+report_area -hierarchy > logs/{dimension}_{spad_width}_area_report.log
+report_timing -hierarchy > logs/{dimension}_{spad_width}_timing_report.log
+report_power -hierarchy > logs/{dimension}_{spad_width}_power_report.log
 write_file -format verilog -hierarchy -output mapped/{dimension}_{spad_width}_mapped.v
 write_file -format ddc -hierarchy -output mapped/{dimension}_{spad_width}_mapped.ddc
 write_sdf mapped/{dimension}_{spad_width}_mapped.sdf

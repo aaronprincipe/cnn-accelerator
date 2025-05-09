@@ -16,7 +16,7 @@ module data_lane_array #(
     input logic i_conv_mode, // Convolution mode - 0: PWise, 1: DWise
 
     // Address Reference
-    input logic [COUNT-1:0] i_id,
+    input logic [ADDR_WIDTH-1:0] i_id,
     input [0:MPP_DEPTH-1][ADDR_WIDTH-1:0] i_sw_addr,
     input logic [ADDR_WIDTH-1:0] i_start_addr,
     input logic [ADDR_WIDTH-1:0] i_end_addr,

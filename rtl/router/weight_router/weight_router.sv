@@ -70,7 +70,7 @@ module weight_router #(
     logic fifo_pop_en, fifo_route_done, fifo_empty, fifo_full, fifo_clear, fifo_idle;
     logic [0:KERNEL_LENGTH-1][ADDR_WIDTH-1:0] dl_sw_addr;
     logic [ADDR_WIDTH-1:0] dl_start_addr, dl_end_addr;
-    logic [COUNT-1:0] dl_id;
+    logic [ADDR_WIDTH-1:0] dl_id;
     logic dl_addr_write_en;
 
     spad #(
