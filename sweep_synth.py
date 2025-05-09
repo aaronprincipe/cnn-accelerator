@@ -36,7 +36,7 @@ check_timing > logs/{dimension}_{spad_width}_check_timing.log
 compile
 report_constraint -all_violators > logs/{dimension}_{spad_width}_constraint_report.log
 report_area -hierarchy > logs/{dimension}_{spad_width}_area_report.log
-report_timing -hierarchy > logs/{dimension}_{spad_width}_timing_report.log
+report_timing > logs/{dimension}_{spad_width}_timing_report.log
 report_power -hierarchy > logs/{dimension}_{spad_width}_power_report.log
 write_file -format verilog -hierarchy -output mapped/{dimension}_{spad_width}_mapped.v
 write_file -format ddc -hierarchy -output mapped/{dimension}_{spad_width}_mapped.ddc
@@ -63,7 +63,7 @@ def main():
         write_compile_tcl(dimension, spad_data_width)
 
         # Run synthesis
-        sim_command = "dc_shell -f compile.tcl -output_log_file logs/compile.log"
+        sim_command = f"dc_shell -f compile.tcl -output_log_file logs/{dimension}_{spad_data_width}_compile.log"
         subprocess.run(sim_command, shell=True)
         print(f"Synthesis completed for {dimension}x{dimension}x{dimension} with SPAD width {spad_data_width}")
 
