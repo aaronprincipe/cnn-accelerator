@@ -47,7 +47,7 @@ write_sdc mapped/{dimension}_{depth}_{spad_width}_mapped.sdc
 quit
 """
     with open("compile.tcl", "w") as f:
-        f.write(tcl_template.format(dimension=dimension, spad_width=spad_width))
+        f.write(tcl_template.format(dimension=dimension, depth=depth, spad_width=spad_width))
 
 def main():
     # 32-bit, 64-bit, 128-bit, 256-bit, 512-bit
@@ -64,7 +64,7 @@ def main():
                 mpp_depth = 9
 
                 write_system_parameters(spad_data_width, addr_width, rows, cols, miso_depth, mpp_depth)
-                write_compile_tcl(dimension, spad_data_width)
+                write_compile_tcl(dimension, depth, spad_data_width)
 
                 # Run synthesis
                 sim_command = f"dc_shell -f compile.tcl -output_log_file logs/{dimension}_{spad_data_width}_compile.log"
