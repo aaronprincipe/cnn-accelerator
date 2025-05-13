@@ -29,13 +29,12 @@ set_host_options -max_cores 16
 
 read_file ./rtl/ -autoread -recursive -format sverilog -top top
 current_design top
-uniquify
 link
 
 check_design > logs/{dimension}_{depth}_{spad_width}_check_design.log
 source timing.con
 check_timing > logs/{dimension}_{depth}_{spad_width}_check_timing.log
-compile -map_effort low
+compile -incremental_mapping -map_effort medium
 
 report_constraint -all_violators > logs/{dimension}_{depth}_{spad_width}_constraint_report.log
 report_area -hierarchy > logs/{dimension}_{depth}_{spad_width}_area_report.log
