@@ -25,6 +25,7 @@ module weight_router #(
     input logic [ADDR_WIDTH-1:0] i_i_c_size,
     input logic [ADDR_WIDTH-1:0] i_o_c_size,
     input logic [ADDR_WIDTH-1:0] i_i_c,
+    input logic [ADDR_WIDTH-1:0] i_depth_mult, // Only used for DW. Ignored for PW.
 
     // SPAD related signals
     input logic i_spad_write_en,
@@ -128,6 +129,7 @@ module weight_router #(
         .i_i_c_size(i_i_c_size),
         .i_o_c_size(i_o_c_size),
         .i_i_c(i_i_c),
+        .i_depth_mult(i_depth_mult),
         .i_start_addr(i_start_addr),
         .o_dl_sw_addr(dl_sw_addr),
         .o_dl_start_addr(dl_start_addr),
