@@ -163,7 +163,8 @@ module top_controller # (
                                     o_done <= 1;
                                 end
                                 else begin
-                                    o_i_c = o_i_c + 1;
+                                    o_i_c <= o_i_c + 1;  // Move to the next input channel
+                                    o_o_c <= 0;          // Reset output channel to 0 for the new input channel
                                     o_ir_reg_clear <= 1;
                                     o_wr_reg_clear <= 1;
                                     state <= CLEAR;
