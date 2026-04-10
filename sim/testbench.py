@@ -118,14 +118,14 @@ def pointwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, s
 
     print("Golden output written successfully")
 
-def depthwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, sh, stride=1, i_zero_point=-128, o_zero_point=-128):
+def depthwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, sh, stride=1, i_zero_point=-128, o_zero_point=-128, depth_mult=1):
     # Modify this to account for changes in quantization, like in pointwise convolution
     H = len(ifmap)          # Input rows
     W = len(ifmap[0])       # Input columns
     C = len(ifmap[0][0])    # Input channels
 
     # For kernel with shape (C_out, C_in)
-    C_in  = len(kernel[0])
+    C_out = len(kernel[0])  # In depthwise conv, number of output channels is determined by number of input channels and depth multiplier
     output_file = "golden_output.txt"
 
     # Output spatial dimensions for no-padding conv: floor((H - 3)/stride) + 1, assume input is already padded
@@ -133,7 +133,7 @@ def depthwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, s
     W_out = (W - 3) // stride + 1 # account for 3x3 kernel
 
     # Allocate output matrix in HWC format (H_out x W_out x C_out)
-    product = [[[0 for _ in range(C_in)] for _ in range(W_out)] for _ in range(H_out)]
+    product = [[[0 for _ in range(C_out)] for _ in range(W_out)] for _ in range(H_out)]
 
     start = time()
 
@@ -142,23 +142,25 @@ def depthwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, s
         h_start = h * stride
         for w in range(W_out):
             w_start = w * stride
-            for c in range(C_in):
+            for c_out in range(C_out):
+                c_in = c_out // depth_mult # determine which input channel to use based on depth multiplier
                 sum_value = 0
-                # multiply across channels
+                # convolve 3x3 kernel for each channel separately 
                 for ki in range(3):
                     for kj in range(3):
-                        # print(f"Processing output pixel ({h}, {w}, {c}), kernel position ({ki}, {kj})")
-                        input_val  = to_precision(ifmap[h_start + ki][w_start + kj][c], 8) - i_zero_point
-                        kernel_val = to_precision(kernel[ki*3+kj][c], 8)
+                        # print(f"Processing output pixel ({h}, {w}, {c_out}), kernel position ({ki}, {kj})")
+                        input_val  = to_precision(ifmap[h_start + ki][w_start + kj][c_in], 8) - i_zero_point
+                        kernel_val = to_precision(kernel[ki*3+kj][c_out], 8)
                         sum_value += input_val * kernel_val
 
+                #print(f"Output pixel ({h}, {w}, {c_out}): sum={sum_value}")
                 quant = ((to_precision(sum_value, 16) * m0) >> (16 + sh)) + o_zero_point
                 if quant < -128:
                     quant = -128
                 elif quant > 127:
                     quant = 127
 
-                product[h][w][c] = quant
+                product[h][w][c_out] = quant
 
     end = time()
     print(f"Golden output computed in {end - start:.10f} seconds")
@@ -169,8 +171,8 @@ def depthwise_convolution_nhwc(ifmap, kernel, TILING_C, TILING_HW, spad_n, m0, s
 
         for h_out in range(H_out):
             for w_out in range(W_out):
-                for c in range(C_in):
-                    val = product[h_out][w_out][c]
+                for c_out in range(C_out):
+                    val = product[h_out][w_out][c_out]
                     line_buffer.append(f"{to_precision(val, 8, signed=False):02x}")
 
                     if len(line_buffer) == spad_n:
@@ -216,7 +218,7 @@ def sram_hex_to_mem(array, n, filename):
     except IOError as e:
         print(f"An error occurred while writing to the file: {e}")
 
-def write_testbench_parameters(input_size, input_channels, output_channels, stride, precision, conv_mode):
+def write_testbench_parameters(input_size, input_channels, output_channels, stride, precision, conv_mode, depth_mult):
     p_mode = 0
     if precision == 4:
         p_mode = 1
@@ -236,7 +238,9 @@ def write_testbench_parameters(input_size, input_channels, output_channels, stri
 `define OUTPUT_SIZE {output_size}
 `define STRIDE {stride}
 `define PRECISION {p_mode}
-`define CONV_MODE {conv_mode}"""
+`define CONV_MODE {conv_mode}
+`define DEPTH_MULT {depth_mult}
+"""
 
     with open("tb_top.svh", "w") as file:
         file.write(header)
@@ -264,6 +268,7 @@ def main():
     parser.add_argument("precision"      , type=int, help="Precision value")
     parser.add_argument("conv_mode"      , type=int, help="0 - pwise, 1 - dwise")
     parser.add_argument("type"           , type=str, help="Type of testbench to run")
+    parser.add_argument("depth_mult"     , type=int, help="Depth multiplier for DW")
     # parser.add_argument("c_tile"         , type=int, help="Size of C tile")
     # parser.add_argument("hw_tile"        , type=int, help="Size of HW tile")
 
@@ -276,6 +281,7 @@ def main():
     precision = args.precision
     tb_type = args.type
     conv_mode = args.conv_mode
+    depth_mult = args.depth_mult
     c_tile = 16
     hw_tile = 16
     m0 = 40076
@@ -292,9 +298,9 @@ def main():
     # Generate random input data
     ifmap = []
     if conv_mode == 0: # pointwise convolution
-        ifmap_max_value = 127 / (input_channels*3*m0/2**(16+sh)) # to avoid overflow. assumes kernel values are in range [-3, 3]
+        ifmap_max_value = 127 / (input_channels*50*m0/2**(16+sh)) # to avoid overflow. assumes kernel values are in range [-50, 50]
     else: # depthwise convolution
-        ifmap_max_value = 127 / (9*3*m0/2**(16+sh))              # to avoid overflow. assumes kernel values are in range [-3, 3] and 3x3=9 kernel size
+        ifmap_max_value = 127 / (9*50*m0/2**(16+sh))              # to avoid overflow. assumes kernel values are in range [-50, 50] and 3x3=9 kernel size
     # print(ifmap_max_value)
     for _ in range(input_channels):
         # ifmap.append(generate_sequential_array(input_size, 8))
@@ -308,14 +314,14 @@ def main():
     if conv_mode == 0: # pointwise convolution
         for i in range(output_channels):
             # kernel.append([2*(i+1)] * input_channels)
-            kernel.append([int(random.uniform(-3,3))] * input_channels)
+            kernel.append([int(random.uniform(0,50))] * input_channels)
     else: # depthwise convolution
         for i in range(9): # hardcoded for depthwise conv with 3x3 kernel and 1 output channel per input channel
             # kernel.append([2*(i+1)] * 1)
-            kernel.append([int(random.uniform(-3,3))] * input_channels)
+            kernel.append([int(random.uniform(0,50))] * input_channels * depth_mult)
 
-    #print(f"ifmap: {ifmap}")
-    #print(f"kernel: {kernel}")
+    print(f"ifmap: {ifmap}")
+    print(f"kernel: {kernel}")
     k_flat = flatten_2d_array(kernel)
     i_flat = flatten_3d_array(ifmap)
 
@@ -338,7 +344,7 @@ def main():
     print(f"Testbench parameters written to sim/tb_top.svh")
 
     # Run Iverilog testbench
-    write_testbench_parameters(input_size, input_channels, output_channels, stride, precision, conv_mode)
+    write_testbench_parameters(input_size, input_channels, output_channels, stride, precision, conv_mode, depth_mult)
 
     
     sram_hex_to_mem(k_flat, spad_n, 'weights.txt')
@@ -348,7 +354,7 @@ def main():
     if conv_mode == 0: # pointwise convolution
         golden_output = pointwise_convolution_nhwc(ifmap, kernel, c_tile, hw_tile, spad_n, m0, sh, stride, i_zero_point=-128, o_zero_point=-128)
     else: # depthwise convolution
-        golden_output = depthwise_convolution_nhwc(ifmap, kernel, c_tile, hw_tile, spad_n, m0, sh, stride, i_zero_point=-128, o_zero_point=-128)
+        golden_output = depthwise_convolution_nhwc(ifmap, kernel, c_tile, hw_tile, spad_n, m0, sh, stride, i_zero_point=-128, o_zero_point=-128, depth_mult=depth_mult)
 
     return
 
