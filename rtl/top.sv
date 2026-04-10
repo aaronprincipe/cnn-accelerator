@@ -33,6 +33,7 @@ module top #(
     input logic [ADDR_WIDTH-1:0] i_o_c_size,
     input logic [ADDR_WIDTH-1:0] i_o_size,
     input logic [ADDR_WIDTH-1:0] i_stride,
+    input logic [ADDR_WIDTH-1:0] i_depth_mult, // Only used for DW. Ignored for PW.
 
     // Input router parameters
     input logic [ADDR_WIDTH-1:0] i_i_start_addr, 
@@ -248,6 +249,7 @@ module top #(
         .i_i_c_size(i_i_c_size),
         .i_o_c_size(i_o_c_size),
         .i_i_c(i_c),
+        .i_depth_mult(i_depth_mult),
         .i_spad_write_en(spad_w_write_en),
         .i_spad_data_in(i_data_in),
         .i_spad_write_addr(i_write_addr),
@@ -299,7 +301,8 @@ module top #(
         .i_valid(),
         .o_shift_en(s_shift_en),
         .i_o_size(i_o_size),
-        .i_c_size(i_o_c_size),
+        .i_o_c_size(i_o_c_size),
+        .i_depth_mult(i_depth_mult),
         .i_x_s(x_s),
         .i_x_e(x_e),
         .i_y_s(y_s),
