@@ -14,7 +14,7 @@ module output_router #(
     input logic i_conv_mode,
 
     // Systolic Array inputs
-    input  logic [0:COLUMNS-1][2*DATA_WIDTH-1:0] i_ifmap,
+    input  logic [0:COLUMNS-1][4*DATA_WIDTH-1:0] i_ifmap,
     input  logic [0:COLUMNS-1]                   i_valid,       // not used in top.sv
     output logic                                 o_shift_en,
     // Qunatization parameters
@@ -54,7 +54,7 @@ module output_router #(
     // Parallel quant
     logic                                 quant_en;
     logic                                 quant_store_reg;
-    logic [0:COLUMNS-1][2*DATA_WIDTH-1:0] quant_i_act;
+    logic [0:COLUMNS-1][4*DATA_WIDTH-1:0] quant_i_act;
     logic [0:COLUMNS-1][  DATA_WIDTH-1:0] quant_o_act;
     logic [0:COLUMNS-1]                   quant_valid;
     logic                                 quant_all_valid;

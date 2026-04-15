@@ -4,14 +4,14 @@ module quant #(
     input  logic i_clk, i_nrst, i_en, i_store_reg,
     input  logic [  DATA_WIDTH-1:0] i_sh,
     input  logic [2*DATA_WIDTH-1:0] i_m0,
-    input  logic signed [2*DATA_WIDTH-1:0] i_act,
-    input  logic signed [2*DATA_WIDTH-1:0] i_zero_point,
+    input  logic signed [4*DATA_WIDTH-1:0] i_act,
+    input  logic signed [  DATA_WIDTH-1:0] i_zero_point,
     output logic signed [  DATA_WIDTH-1:0] o_act,
     output logic o_valid
 );
     logic [  DATA_WIDTH-1:0] sh;
     logic [2*DATA_WIDTH-1:0] m0;
-    logic signed [2*DATA_WIDTH-1:0] act;
+    logic signed [4*DATA_WIDTH-1:0] act;
     logic signed [4*DATA_WIDTH-1:0] p, q;
 
     always_ff @(posedge i_clk) begin

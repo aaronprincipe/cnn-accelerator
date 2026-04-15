@@ -7,11 +7,11 @@ module systolic_array #(
     input logic [1:0] i_mode,
     input logic [0:HEIGHT-1][DATA_WIDTH-1:0] i_ifmap,
     input logic [0:WIDTH-1][DATA_WIDTH-1:0] i_weight,
-    output logic [0:WIDTH-1][DATA_WIDTH*2-1:0] o_ofmap
+    output logic [0:WIDTH-1][DATA_WIDTH*4-1:0] o_ofmap
 );
     logic [0:HEIGHT-1][0:WIDTH][DATA_WIDTH-1:0] mat_A;
     logic [0:HEIGHT][0:WIDTH-1][DATA_WIDTH-1:0] mat_B;
-    logic [0:HEIGHT-1][0:WIDTH][DATA_WIDTH*2-1:0] mat_C;
+    logic [0:HEIGHT-1][0:WIDTH][DATA_WIDTH*4-1:0] mat_C;
 
     // logic [0:HEIGHT-1][0:WIDTH] mat_A_valid;
     // logic [0:HEIGHT][0:WIDTH-1] mat_B_valid;

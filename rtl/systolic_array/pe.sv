@@ -6,7 +6,7 @@ module pe #(
 
     // Data Inputs 
     input logic [DATA_WIDTH-1:0] i_ifmap, i_weight,
-    input logic [DATA_WIDTH*2-1:0] i_psum,
+    input logic [DATA_WIDTH*4-1:0] i_psum,
 
     // Control Inputs
     input logic i_reg_clear, // Clear register
@@ -19,10 +19,11 @@ module pe #(
 
     // Data Outputs
     output logic [DATA_WIDTH-1:0] o_ifmap, o_weight,
-    output logic [DATA_WIDTH*2-1:0] o_ofmap
+    output logic [DATA_WIDTH*4-1:0] o_ofmap
 );
     logic [DATA_WIDTH-1:0] reg_ifmap, reg_weight;
-    logic [DATA_WIDTH*2-1:0] reg_psum, o_multiplier, reg_psum_out;
+    logic signed [DATA_WIDTH*2-1:0] o_multiplier;
+    logic signed [DATA_WIDTH*4-1:0] reg_psum, reg_psum_out;
 
     always_ff @(posedge i_clk or negedge i_nrst) begin
         if (~i_nrst) begin

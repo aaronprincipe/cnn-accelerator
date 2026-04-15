@@ -44,7 +44,7 @@ module top #(
     input logic [ADDR_WIDTH-1:0] i_w_addr_end,
 
     // Output
-    output logic [DATA_WIDTH*2-1:0] o_ofmap,
+    output logic [DATA_WIDTH*4-1:0] o_ofmap,
     output logic o_ofmap_valid,
     output logic o_done,
 
@@ -120,7 +120,7 @@ module top #(
         end
     endgenerate
 
-    logic [0:COLUMNS-1][DATA_WIDTH*2-1:0] ofmap;
+    logic [0:COLUMNS-1][DATA_WIDTH*4-1:0] ofmap;
 
     // Input router to Output router
     logic [ADDR_WIDTH-1:0] x_s, x_e, y_s, y_e;
