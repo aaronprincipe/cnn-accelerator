@@ -43,6 +43,10 @@ module tb_top;
     logic [ADDR_WIDTH-1:0] o_word_addr;
     logic [SPAD_N-1:0] o_word_byte_offset;
     logic [ADDR_WIDTH-1:0] o_o_x, o_o_y, o_o_c;
+    
+    logic [SRAM_DATA_WIDTH-1:0] o_or_data_out;
+    logic i_or_read_en;
+    logic [ADDR_WIDTH-1:0] i_or_addr;
 
     logic [DATA_WIDTH*2-1:0] o_ofmap;
     logic o_ofmap_valid, o_done, o_or_en, o_route_en;
@@ -77,6 +81,9 @@ module tb_top;
         .i_i_addr_end(i_i_addr_end),
         .i_w_start_addr(i_w_start_addr),
         .i_w_addr_end(i_w_addr_end),
+        .i_or_addr(i_or_addr),
+        .i_or_read_en(i_or_read_en),
+        .o_or_data_out(o_or_data_out),
         .o_ofmap(o_ofmap),
         .o_ofmap_valid(o_ofmap_valid),
         .o_done(o_done),
@@ -120,6 +127,8 @@ module tb_top;
         i_w_addr_end = 1;
         i_route_size = 9;
         i_route_en = 0;
+        i_or_read_en = 0;
+        i_or_addr = 0;
 
         /*
         if (!$value$plusargs("CONV_MODE=%d", i_conv_mode)) i_conv_mode = 0;
@@ -294,10 +303,14 @@ module tb_top;
                 
                 
                 for (int i = 0; i < ((output_size*output_size*output_channels+SPAD_N-1)/SPAD_N); i++) begin
-                    $fdisplay(output_file, "%h", tb_top.dut.or_spad.buffer[i]);
-                    //$write("%h\n", tb_top.dut.or_spad.buffer[i]);
+                    i_or_addr = i;
+                    i_or_read_en = 1;
+                    #10; // Wait for one clock cycle
+                    $fdisplay(output_file, "%h", o_or_data_out);
                 end
-                
+                i_or_read_en = 0;
+                i_or_addr = 0;
+
                 /*
                 for (int i = 0; i < (input_size*input_size*input_channels/SPAD_N); i++) begin
                     $write("Row %0d: %h\n", i, tb_top.dut.ir_inst.ir_spad.buffer[i]);
