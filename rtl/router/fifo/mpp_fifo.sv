@@ -25,7 +25,7 @@ module mpp_fifo #(
     logic write_done;
 
     // Write data
-    always_ff @ (posedge i_clk or negedge i_nrst) begin
+    always_ff @ (posedge i_clk) begin
         if (~i_nrst) begin
             w_pointer <= 0;
         end else if (i_clear) begin
@@ -51,7 +51,7 @@ module mpp_fifo #(
         end
     end
 
-    always_ff @ (posedge i_clk or negedge i_nrst) begin
+    always_ff @ (posedge i_clk) begin
         if (~i_nrst) begin
             write_done <= 0;
         end else if (i_clear) begin
@@ -61,7 +61,7 @@ module mpp_fifo #(
         end
     end
 
-    always_ff @ (posedge i_clk or negedge i_nrst) begin
+    always_ff @ (posedge i_clk) begin
         if (~i_nrst) begin
             r_pointer <= 0;
         end else if (i_clear) begin

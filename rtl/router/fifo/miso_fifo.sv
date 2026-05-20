@@ -48,7 +48,7 @@ module miso_fifo #(
     assign pop_en = i_pop_en && !o_empty;
 
     // Write data
-    always @ (posedge i_clk or negedge i_nrst) begin
+    always @ (posedge i_clk) begin
         if (~i_nrst) begin
             w_pointer <= 0;
         end else if (i_clear) begin
@@ -99,7 +99,7 @@ module miso_fifo #(
     end
 
     // Pop data
-    always_ff @ (posedge i_clk or negedge i_nrst) begin
+    always_ff @ (posedge i_clk) begin
         if (~i_nrst) begin
             r_pointer <= 0;
             o_data <= 0;

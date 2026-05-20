@@ -22,7 +22,7 @@ module spad # (
         end
     end
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             o_data_out_valid <= 0;
         end else begin

@@ -92,7 +92,7 @@ module top_controller # (
         DONE
     */
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if(~i_nrst) begin
             o_wr_en <= 0;
             o_ir_pop_en <= 0;

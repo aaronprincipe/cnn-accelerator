@@ -46,7 +46,7 @@ module p_data_selector #(
     assign write_en = i_data_valid & i_en;
 
         // Store reference address
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             start_addr <= 0;
             end_addr <= 0;
@@ -67,7 +67,7 @@ module p_data_selector #(
     assign check = i_spad_addr * SPAD_N + SPAD_N - 1;
 
     // Check if done
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             route_done <= 0;
         end else begin

@@ -79,7 +79,7 @@ module wr_controller #(
 
     logic [0:KERNEL_LENGTH-1][$clog2(SPAD_N)+ADDR_WIDTH-1:0] addr;
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             o_route_en <= 0;
             o_context_done <= 0;

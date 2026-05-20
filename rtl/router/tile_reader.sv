@@ -28,7 +28,7 @@ module tile_reader #(
     logic [ADDR_WIDTH-1:0] reg_counter, reg_read_addr, reg_prev_read_addr;
     logic first_addr_done; // temp fix to handle the case where start_addr == end_addr, which should still result in one read operation and then done.
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             reg_counter <= 0;
             reg_read_addr <= 0;
@@ -59,7 +59,7 @@ module tile_reader #(
         end
     end
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             reg_prev_read_addr <= 0;
         end else begin
