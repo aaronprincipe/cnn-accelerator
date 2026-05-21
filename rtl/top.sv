@@ -196,13 +196,21 @@ module top #(
 
     logic [ADDR_WIDTH-1:0] s_r, s_c, s_t;
 
+    // Reset synchronizer to eliminate setup/hold violations
+    logic o_nrst_sync;
+    reset_sync reset_sync_inst (
+        .i_clk(i_clk),
+        .i_nrst_async(i_nrst),
+        .o_nrst_sync(o_nrst_sync)
+    );
+
     top_controller #(
         .ROWS(ROWS),
         .COLUMNS(COLUMNS),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) top_controller_inst (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_reg_clear(i_reg_clear),
         .i_route_en(i_route_en),
         .o_ir_en(ir_en),
@@ -246,7 +254,7 @@ module top #(
         .MISO_DEPTH(MISO_DEPTH)
     ) ir_inst (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_en(ir_en),
         .i_reg_clear(ir_reg_clear || i_reg_clear),
         .i_fifo_pop_en(ir_pop_en),
@@ -291,7 +299,7 @@ module top #(
         .MISO_DEPTH(MISO_DEPTH)
     ) wr_inst (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_en(ir_en),
         .i_reg_clear(wr_reg_clear || i_reg_clear),
         .i_fifo_pop_en(wr_pop_en),
@@ -327,7 +335,7 @@ module top #(
         .HEIGHT(ROWS)
     ) systolic_array_inst (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_mode(i_p_mode),
         .i_reg_clear(i_reg_clear || s_reg_clear), 
         .i_pe_en(pe_en),
@@ -347,7 +355,7 @@ module top #(
         .COLUMNS(COLUMNS)
     ) or_inst (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_reg_clear(i_reg_clear || or_reg_clear),
         .i_en(or_en),
         .i_conv_mode(i_conv_mode),
@@ -394,7 +402,7 @@ module top #(
         .SPAD_N(SPAD_N)
     ) or_spad (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_write_en(or_valid),
         .i_read_en(i_or_read_en),
         .i_data_in(or_data_out),
@@ -412,7 +420,7 @@ module top #(
         .SPAD_N(SPAD_DATA_WIDTH / (4*DATA_WIDTH)) 
     ) bias_spad (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_write_en(spad_b_write_en),
         .i_read_en(quant_read_en),
         .i_data_in(i_data_in),
@@ -424,13 +432,13 @@ module top #(
     );
 
     spad #(
-        .ADDR_WIDTH(8), // hardcode for now
+        .ADDR_WIDTH(8), // hardcode for now = exact for 256 elements.
         .SPAD_WIDTH(SPAD_DATA_WIDTH),
-        .DATA_WIDTH(2*DATA_WIDTH),
-        .SPAD_N(SPAD_DATA_WIDTH / (2*DATA_WIDTH))
+        .DATA_WIDTH(4*DATA_WIDTH),  // 32b multiplier
+        .SPAD_N(SPAD_DATA_WIDTH / (4*DATA_WIDTH))
     ) scale_spad (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_write_en(spad_sc_write_en),
         .i_read_en(quant_read_en),
         .i_data_in(i_data_in),
@@ -448,7 +456,7 @@ module top #(
         .SPAD_N(SPAD_DATA_WIDTH / DATA_WIDTH)
     ) shift_spad (
         .i_clk(i_clk),
-        .i_nrst(i_nrst),
+        .i_nrst(o_nrst_sync),
         .i_write_en(spad_sh_write_en),
         .i_read_en(quant_read_en),
         .i_data_in(i_data_in),
