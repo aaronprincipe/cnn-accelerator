@@ -69,6 +69,8 @@ module miso_fifo #(
             for (int i = 0; i < DATA_LENGTH; i = i + 1) begin
                 w_offset = w_offset + i_valid[i];
             end
+        end else begin
+            w_offset = 0;
         end
     end
 

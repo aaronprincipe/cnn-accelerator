@@ -72,6 +72,11 @@ module d_data_selector #(
     // ~o_route_done
     always_comb begin
         if (i_en & i_data_valid & ~mpp_empty) begin
+            // Initialize data_hit to 0
+            for (int i = 0; i < SPAD_N; i++) begin
+                data_hit[i] = 0;
+            end
+            
             for (int i = 0; i < SPAD_N; i++) begin
                 for (int j = 0; j < SPAD_N; j++) begin
                     if ((spad_addr[i] == peek_addr[j]) & peek_valid[j]) begin

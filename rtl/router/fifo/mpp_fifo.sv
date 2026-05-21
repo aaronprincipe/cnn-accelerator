@@ -42,6 +42,7 @@ module mpp_fifo #(
 
     // Pop data
     always_comb begin
+        pop_offset = 0;
         if (i_pop_en & !o_empty) begin
             for (int i = 0; i < PEEK_WIDTH; i++) begin
                 if (i_data_hit[i]) begin
@@ -73,19 +74,17 @@ module mpp_fifo #(
 
     // Peek data
     always_comb begin
+        for (int i = 0; i < PEEK_WIDTH; i++) begin
+            o_peek_data[i] = {DATA_WIDTH{1'b0}};
+            o_peek_valid[i] = 0;
+        end
+        
         if (!o_empty) begin
             for (int i = 0; i < PEEK_WIDTH; i++) begin
                 if (r_pointer + i < w_pointer) begin
                     o_peek_data[i] = fifo[r_pointer + i];
                     o_peek_valid[i] = 1;
-                end else begin
-                    o_peek_data[i] = {DATA_WIDTH{1'b0}};
-                    o_peek_valid[i] = 0;
                 end
-            end
-        end else begin
-            for (int i = 0; i < PEEK_WIDTH; i++) begin
-                o_peek_data[i] = {DATA_WIDTH{1'b0}};
             end
         end
     end

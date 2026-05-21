@@ -121,6 +121,8 @@ module p_data_selector #(
             for (int i = 0; i < SPAD_N; i = i + 1) begin
                 addr_offset = addr_offset + f_data_hit[i];
             end
+        end else begin
+            addr_offset = 0;
         end
     end
 
