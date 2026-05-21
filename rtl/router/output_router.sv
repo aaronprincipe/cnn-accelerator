@@ -90,21 +90,23 @@ module output_router #(
         byte_offset = byte_addr % SPAD_N;
     end
 
-    // Assume 32b word, 32b bias, 16b multiplier, 8b shift for now. 
+    // Assume 32b word, 32b bias, 32b multiplier, 8b shift for now. 
     // Can be extended as long as SPAD_N_BIAS is a multiple of 2 (for %clog2(*) to work correctly). Fix this later!
     parameter int SPAD_N_BIAS = SPAD_WIDTH / (DATA_WIDTH * 4);  // number of bias values we can store in one SPAD word
-    parameter int SPAD_N_MUL = SPAD_WIDTH / (DATA_WIDTH * 2);   // number of multiplier values we can store in one SPAD word
+    parameter int SPAD_N_MUL = SPAD_WIDTH / (DATA_WIDTH * 4);   // number of multiplier values we can store in one SPAD word
     parameter int SPAD_N_SHIFT = SPAD_WIDTH / DATA_WIDTH;       // number of shift values we can store in one SPAD word
     
     logic [SPAD_N_BIAS-1:0] bias_offset;
     logic [SPAD_N_MUL-1:0] mul_offset;
     logic [SPAD_N_SHIFT-1:0] shift_offset;
     logic [ADDR_WIDTH-1:0] quant_addr;
+    /*
     always_comb begin
         o_bias_addr = quant_addr >> $clog2(SPAD_N_BIAS);
         o_mul_addr = quant_addr >> $clog2(SPAD_N_MUL);
         o_shift_addr = quant_addr >> $clog2(SPAD_N_SHIFT);
     end
+    */
 
     genvar q;
     generate
@@ -118,7 +120,7 @@ module output_router #(
                 .i_store_reg(quant_store_reg && (q == quant_idx)),
                 .i_act      (quant_i_act[q]), 
                 .i_sh       (i_quant_sh[shift_offset*DATA_WIDTH +: DATA_WIDTH]),
-                .i_m0       (i_quant_m0[mul_offset*2*DATA_WIDTH +: 2*DATA_WIDTH]),
+                .i_m0       (i_quant_m0[mul_offset*4*DATA_WIDTH +: 4*DATA_WIDTH]),
                 .i_bias     (i_quant_bias[bias_offset*4*DATA_WIDTH +: 4*DATA_WIDTH]),
                 .i_zero_point(i_zero_point),
                 .o_act      (quant_o_act[q]),
@@ -158,7 +160,7 @@ module output_router #(
 
     logic [2:0] state;
 
-    always_ff @(posedge i_clk or negedge i_nrst) begin
+    always_ff @(posedge i_clk) begin
         if (~i_nrst) begin
             state           <= IDLE_STATE;
             
@@ -199,6 +201,10 @@ module output_router #(
             mul_offset      <= 0;
             shift_offset    <= 0;
             counter         <= 0;
+
+            o_bias_addr <= 0;
+            o_mul_addr <= 0;
+            o_shift_addr <= 0;
         end else if(i_reg_clear) begin
             state           <= IDLE_STATE;
             
@@ -239,6 +245,10 @@ module output_router #(
             bias_offset     <= 0;
             mul_offset      <= 0;
             shift_offset    <= 0;
+
+            o_bias_addr <= 0;
+            o_mul_addr <= 0;
+            o_shift_addr <= 0;
         end else begin
             case (state)
                 IDLE_STATE: begin
@@ -266,6 +276,10 @@ module output_router #(
                         quant_addr      <= (i_conv_mode) ? (i_i_c * i_depth_mult) + i_c_s : i_c_s; // if DW, we need to offset by i_i_c * i_depth_mult
                         o_quant_read_en <= 1;
 
+                        o_bias_addr <= ((i_conv_mode) ? (i_i_c * i_depth_mult) + i_c_s : i_c_s) >> $clog2(SPAD_N_BIAS);
+                        o_mul_addr <= ((i_conv_mode) ? (i_i_c * i_depth_mult) + i_c_s : i_c_s) >> $clog2(SPAD_N_MUL);
+                        o_shift_addr <= ((i_conv_mode) ? (i_i_c * i_depth_mult) + i_c_s : i_c_s) >> $clog2(SPAD_N_SHIFT);
+
                         num_input_valid <= (limit_xy+1) * (limit_c - start_c + 1);
                     end 
                     else 
@@ -281,6 +295,10 @@ module output_router #(
                         quant_addr <= quant_addr + 1;                       // we can start reading the next quant data in the same cycle as storing the current quant result since the quant result is only valid in the next cycle
                         o_quant_read_en <= (quant_addr < limit_c) ? 1 : 0;  // stop reading quant data once we have read all the necessary quant data for the current tile
                         
+                        o_bias_addr <= (quant_addr+1) >> $clog2(SPAD_N_BIAS);
+                        o_mul_addr <= (quant_addr+1) >> $clog2(SPAD_N_MUL);
+                        o_shift_addr <= (quant_addr+1) >> $clog2(SPAD_N_SHIFT);
+                        
                         bias_offset  <= quant_addr % SPAD_N_BIAS;
                         mul_offset   <= quant_addr % SPAD_N_MUL;
                         shift_offset <= quant_addr % SPAD_N_SHIFT;
@@ -292,6 +310,10 @@ module output_router #(
 
                         o_quant_read_en <= 0;
                         quant_addr <= 0;
+
+                        o_bias_addr <= 0;
+                        o_mul_addr <= 0;
+                        o_shift_addr <= 0;
 
                         bias_offset  <= 0;
                         mul_offset   <= 0;
